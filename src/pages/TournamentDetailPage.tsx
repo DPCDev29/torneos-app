@@ -38,7 +38,7 @@ export function TournamentDetailPage() {
       return
     }
     if (tournament?.format === 'double-elimination' && participants.length < 4) {
-      alert('La doble eliminatoria requiere al menos 4 participantes.')
+      alert('La eliminación híbrida con consolación requiere al menos 4 participantes para garantizar una segunda partida a los perdedores de la primera ronda.')
       return
     }
     await regenerateTournamentSchedule(id)
@@ -126,7 +126,7 @@ export function TournamentDetailPage() {
           <Swords className="h-6 w-6 text-green-600" />
           <div>
             <p className="font-semibold text-gray-900">Partidos</p>
-            <p className="text-sm text-gray-600">{matches.filter((m) => !m.isBye).length} programados</p>
+            <p className="text-sm text-gray-600">{matches.filter((m) => !m.isBye && m.homeParticipantId && m.awayParticipantId).length} programados</p>
           </div>
         </Link>
         {tournament.format === 'groups-knockout' && (

@@ -45,6 +45,10 @@ export function BracketPage() {
     )
   }
 
+  const renderPending = () => (
+    <div className="rounded px-2 py-1 text-sm text-gray-400">Por definir</div>
+  )
+
   const renderBracket = (stage: 'knockout' | 'winners' | 'losers' | 'final', title: string) => {
     const stageMatches = matches.filter((m) => m.stage === stage && !m.isBye)
     if (!stageMatches.length) return null
@@ -65,9 +69,9 @@ export function BracketPage() {
                   .map((m) => (
                     <div key={m.id} className="card p-3">
                       <div className="mb-2 text-xs text-gray-500">{formatTime(m.scheduledAt)} · {m.courtName}</div>
-                      {renderParticipant(m.homeParticipantId, m.winnerParticipantId)}
+                      {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId) : renderPending()}
                       <div className="my-1 text-center text-xs text-gray-400">vs</div>
-                      {renderParticipant(m.awayParticipantId, m.winnerParticipantId)}
+                      {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId) : renderPending()}
                       {isMatchFinished(m) && (
                         <div className="mt-2 text-center font-mono text-sm font-semibold">
                           {countSetsWon(m.sets, 'home')} - {countSetsWon(m.sets, 'away')}

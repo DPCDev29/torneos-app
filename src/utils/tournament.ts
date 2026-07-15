@@ -267,12 +267,17 @@ export function resolveBracketByes(matches: Match[]): void {
     changed = false
     matches.forEach((match) => {
       if (match.winnerParticipantId || match.isBye) return
-      const participantId = match.homeParticipantId || match.awayParticipantId
-      if (!participantId) return
+      const participantIds = [match.homeParticipantId, match.awayParticipantId].filter(Boolean)
       const feeders = matches.filter((source) => source.nextMatchId === match.id || source.loserNextMatchId === match.id)
       if (!feeders.length || !feeders.every((source) => Boolean(source.winnerParticipantId) || Boolean(source.isBye))) return
+      if (participantIds.length === 0) {
+        match.isBye = true
+        changed = true
+        return
+      }
+      if (participantIds.length !== 1) return
       match.isBye = true
-      match.winnerParticipantId = participantId
+      match.winnerParticipantId = participantIds[0]
       advanceWinner(match, matches)
       changed = true
     })
@@ -342,18 +347,32 @@ export function buildBalancedBracketSlots(participants: Participant[]): string[]
       || (levelWeight[b.level || 'amateur'] - levelWeight[a.level || 'amateur'])
       || a.name.localeCompare(b.name))
   const seedIndexes = getSeedSlotIndexes(bracketSize)
-  const byeCount = bracketSize - participants.length
+  const firstRoundMatchCount = bracketSize / 2
+  const desiredFirstRoundMatches = Math.max(2, 2 * Math.floor(Math.floor(participants.length / 2) / 2))
+  const automaticAdvanceCount = participants.length - (desiredFirstRoundMatches * 2)
 
   orderedSeeds.slice(0, bracketSize).forEach((participant, index) => {
     slots[seedIndexes[index]] = participant.id
   })
 
-  const reservedByeSlots = new Set<number>()
-  orderedSeeds.slice(0, byeCount).forEach((_, index) => {
-    const seedIndex = seedIndexes[index]
-    reservedByeSlots.add(seedIndex % 2 === 0 ? seedIndex + 1 : seedIndex - 1)
+  const matchIndexesForSeed = orderedSeeds.slice(0, bracketSize).map((_, index) => Math.floor(seedIndexes[index] / 2))
+  const automaticMatchIndexes = new Set<number>()
+  matchIndexesForSeed.forEach((matchIndex) => {
+    const matchSlots = [slots[matchIndex * 2], slots[(matchIndex * 2) + 1]].filter(Boolean)
+    if (automaticMatchIndexes.size < automaticAdvanceCount && matchSlots.length === 1) automaticMatchIndexes.add(matchIndex)
   })
 
+  const activeMatchIndexes = new Set<number>()
+  matchIndexesForSeed.forEach((matchIndex) => {
+    if (!automaticMatchIndexes.has(matchIndex)) activeMatchIndexes.add(matchIndex)
+  })
+  for (let matchIndex = 0; activeMatchIndexes.size < desiredFirstRoundMatches && matchIndex < firstRoundMatchCount; matchIndex++) {
+    if (!automaticMatchIndexes.has(matchIndex)) activeMatchIndexes.add(matchIndex)
+  }
+
+  const soloMatchIndexes = Array.from({ length: firstRoundMatchCount }, (_, matchIndex) => matchIndex)
+    .filter((matchIndex) => !activeMatchIndexes.has(matchIndex) && !slots[matchIndex * 2] && !slots[(matchIndex * 2) + 1])
+    .slice(0, automaticAdvanceCount)
   const remainingParticipants = participants
     .filter((participant) => !orderedSeeds.some((seed) => seed.id === participant.id))
     .sort((a, b) => (levelWeight[b.level || 'amateur'] - levelWeight[a.level || 'amateur']) || a.name.localeCompare(b.name))
@@ -364,28 +383,41 @@ export function buildBalancedBracketSlots(participants: Participant[]): string[]
     if (participant) quadrantCounts[Math.min(3, Math.floor(index / quadrantSize))][participant.level || 'amateur'] += 1
   })
 
-  remainingParticipants.forEach((participant) => {
-    const available = slots
-      .map((participantId, index) => ({ participantId, index }))
-      .filter(({ participantId, index }) => !participantId && !reservedByeSlots.has(index))
+  const activeSlots = slots
+    .map((participantId, index) => ({ participantId, index }))
+    .filter(({ participantId, index }) => !participantId && activeMatchIndexes.has(Math.floor(index / 2)))
+  const activeParticipantCount = activeSlots.length
+  const competitiveParticipants = remainingParticipants.slice(0, activeParticipantCount)
+  const automaticParticipants = remainingParticipants.slice(activeParticipantCount)
+
+  competitiveParticipants.forEach((participant) => {
     const level = participant.level || 'amateur'
-    const selected = available.sort((a, b) => {
-      const quadrantA = Math.min(3, Math.floor(a.index / quadrantSize))
-      const quadrantB = Math.min(3, Math.floor(b.index / quadrantSize))
-      const opponentA = slots[a.index % 2 === 0 ? a.index + 1 : a.index - 1]
-      const opponentB = slots[b.index % 2 === 0 ? b.index + 1 : b.index - 1]
-      const opponentALevel = participants.find((item) => item.id === opponentA)?.level
-      const opponentBLevel = participants.find((item) => item.id === opponentB)?.level
-      const avoidA = level === 'advanced' && opponentALevel === 'advanced' ? 1 : 0
-      const avoidB = level === 'advanced' && opponentBLevel === 'advanced' ? 1 : 0
-      if (avoidA !== avoidB) return avoidA - avoidB
-      const levelBalance = quadrantCounts[quadrantA][level] - quadrantCounts[quadrantB][level]
-      if (levelBalance !== 0) return levelBalance
-      return a.index - b.index
-    })[0]
+    const selected = activeSlots
+      .filter(({ index }) => !slots[index])
+      .sort((a, b) => {
+        const quadrantA = Math.min(3, Math.floor(a.index / quadrantSize))
+        const quadrantB = Math.min(3, Math.floor(b.index / quadrantSize))
+        const opponentA = slots[a.index % 2 === 0 ? a.index + 1 : a.index - 1]
+        const opponentB = slots[b.index % 2 === 0 ? b.index + 1 : b.index - 1]
+        const opponentALevel = participants.find((item) => item.id === opponentA)?.level
+        const opponentBLevel = participants.find((item) => item.id === opponentB)?.level
+        const avoidA = level === 'advanced' && opponentALevel === 'advanced' ? 1 : 0
+        const avoidB = level === 'advanced' && opponentBLevel === 'advanced' ? 1 : 0
+        if (avoidA !== avoidB) return avoidA - avoidB
+        const levelBalance = quadrantCounts[quadrantA][level] - quadrantCounts[quadrantB][level]
+        if (levelBalance !== 0) return levelBalance
+        return a.index - b.index
+      })[0]
     if (!selected) return
     slots[selected.index] = participant.id
     quadrantCounts[Math.min(3, Math.floor(selected.index / quadrantSize))][level] += 1
+  })
+
+  automaticParticipants.forEach((participant, index) => {
+    const matchIndex = soloMatchIndexes[index]
+    if (matchIndex === undefined) return
+    const slotIndex = slots[matchIndex * 2] ? (matchIndex * 2) + 1 : matchIndex * 2
+    slots[slotIndex] = participant.id
   })
 
   return slots
@@ -402,7 +434,9 @@ export function generateDoubleEliminationMatches(
   })
 
   const winnerRounds = getKnockoutRounds(getBracketSize(participants.length))
-  const firstWinnersRound = winners.filter((match) => match.round === 1).sort((a, b) => a.position - b.position)
+  const firstWinnersRound = winners
+    .filter((match) => match.round === 1 && !match.isBye)
+    .sort((a, b) => a.position - b.position)
   const losers = generateKnockoutSkeleton(tournamentId, firstWinnersRound.length, 1, 'losers')
   const firstLosersRound = losers.filter((match) => match.round === 1).sort((a, b) => a.position - b.position)
 

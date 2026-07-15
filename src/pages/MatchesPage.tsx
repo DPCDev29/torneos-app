@@ -68,7 +68,7 @@ export function MatchesPage() {
   }
 
   const handleSaveSets = async (match: Match, sets: MatchSet[]) => {
-    if (sets.length === 0 || sets.some((s) => Number.isNaN(s.home) || Number.isNaN(s.away))) return
+    if (!match.homeParticipantId || !match.awayParticipantId || sets.length === 0 || sets.some((s) => Number.isNaN(s.home) || Number.isNaN(s.away))) return
 
     const winner = getMatchWinner({ ...match, sets })
 
@@ -111,7 +111,7 @@ export function MatchesPage() {
 
   const stageMatches = (stage: 'group' | 'knockout' | 'league' | 'winners' | 'losers' | 'final') => {
     return matches
-      .filter((m) => m.stage === stage && !m.isBye)
+      .filter((m) => m.stage === stage && !m.isBye && Boolean(m.homeParticipantId && m.awayParticipantId))
       .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
   }
 
