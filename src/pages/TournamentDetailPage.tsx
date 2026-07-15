@@ -160,8 +160,8 @@ export function TournamentDetailPage() {
           <div className="card flex items-center gap-3">
             <Trophy className="h-6 w-6 text-yellow-600" />
             <div>
-              <p className="font-semibold text-gray-900">Doble eliminatoria</p>
-              <p className="text-sm text-gray-600">Winners, losers y final</p>
+              <p className="font-semibold text-gray-900">Eliminación híbrida con consolación</p>
+              <p className="text-sm text-gray-600">Los perdedores de la primera ronda juegan en el bracket de perdedores</p>
             </div>
           </div>
         )}

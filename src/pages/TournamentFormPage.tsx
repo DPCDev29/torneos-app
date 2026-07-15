@@ -151,7 +151,7 @@ export function TournamentFormPage() {
             <option value="groups-knockout">Fase de grupos + eliminatoria</option>
             <option value="knockout-only">Solo eliminatoria</option>
             <option value="league">Liga (todos contra todos)</option>
-            <option value="double-elimination">Doble eliminatoria</option>
+            <option value="double-elimination">Eliminación híbrida con consolación</option>
           </select>
           {format === 'double-elimination' && (
             <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">

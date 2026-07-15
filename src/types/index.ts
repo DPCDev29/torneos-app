@@ -25,6 +25,7 @@ export interface Participant {
   representative?: string
   color: string
   level?: ParticipantLevel
+  ranking?: number
   isSeeded?: boolean
   createdAt: string
 }

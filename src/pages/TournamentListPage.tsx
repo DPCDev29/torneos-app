@@ -57,7 +57,7 @@ export function TournamentListPage() {
                   : t.format === 'league'
                     ? 'Liga'
                     : t.format === 'double-elimination'
-                      ? 'Doble eliminatoria'
+                      ? 'Eliminación híbrida con consolación'
                       : 'Solo eliminatoria'}
               </div>
             </Link>

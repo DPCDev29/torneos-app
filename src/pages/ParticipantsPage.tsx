@@ -13,6 +13,7 @@ export function ParticipantsPage() {
   const [representative, setRepresentative] = useState('')
   const [color, setColor] = useState(getDefaultColor(0))
   const [level, setLevel] = useState<ParticipantLevel>('amateur')
+  const [ranking, setRanking] = useState('')
   const [isSeeded, setIsSeeded] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -33,6 +34,7 @@ export function ParticipantsPage() {
     setRepresentative('')
     setColor(getDefaultColor(participants.length))
     setLevel('amateur')
+    setRanking('')
     setIsSeeded(false)
     setEditingId(null)
     setError('')
@@ -52,8 +54,11 @@ export function ParticipantsPage() {
       return
     }
 
+    const parsedRanking = Number(ranking)
+    const participantRanking = Number.isInteger(parsedRanking) && parsedRanking > 0 ? parsedRanking : undefined
+
     if (editingId) {
-      await db.participants.update(editingId, { name: trimmed, contact, representative, color, level, isSeeded })
+      await db.participants.update(editingId, { name: trimmed, contact, representative, color, level, ranking: participantRanking, isSeeded })
     } else {
       await db.participants.put({
         id: generateId(),
@@ -63,6 +68,7 @@ export function ParticipantsPage() {
         representative,
         color,
         level,
+        ranking: participantRanking,
         isSeeded,
         createdAt: new Date().toISOString(),
       })
@@ -78,6 +84,7 @@ export function ParticipantsPage() {
     setRepresentative(p.representative || '')
     setColor(p.color)
     setLevel(p.level || 'amateur')
+    setRanking(p.ranking ? String(p.ranking) : '')
     setIsSeeded(Boolean(p.isSeeded))
     setError('')
   }
@@ -135,6 +142,14 @@ export function ParticipantsPage() {
             <option value="intermediate">Intermedio</option>
             <option value="advanced">Avanzado</option>
           </select>
+          <input
+            type="number"
+            min="1"
+            value={ranking}
+            onChange={(e) => setRanking(e.target.value)}
+            placeholder="Ranking"
+            className="input"
+          />
           <div className="flex items-center gap-2">
             <Palette className="h-5 w-5 text-gray-500" />
             <input
@@ -170,7 +185,7 @@ export function ParticipantsPage() {
               <div>
                 <p className="font-semibold text-gray-900">{p.name}</p>
                 <p className="text-xs text-gray-500">
-                  {p.level === 'advanced' ? 'Avanzado' : p.level === 'intermediate' ? 'Intermedio' : 'Amateur'}{p.isSeeded ? ' · Sembrado' : ''}
+                  {p.level === 'advanced' ? 'Avanzado' : p.level === 'intermediate' ? 'Intermedio' : 'Amateur'}{p.ranking ? ` · Ranking ${p.ranking}` : ''}{p.isSeeded ? ' · Sembrado' : ''}
                 </p>
                 {p.contact && <p className="text-xs text-gray-500">{p.contact}</p>}
               </div>

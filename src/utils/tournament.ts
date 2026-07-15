@@ -338,7 +338,9 @@ export function buildBalancedBracketSlots(participants: Participant[]): string[]
   const levelWeight = { advanced: 3, intermediate: 2, amateur: 1 }
   const orderedSeeds = participants
     .filter((participant) => participant.isSeeded)
-    .sort((a, b) => (levelWeight[b.level || 'amateur'] - levelWeight[a.level || 'amateur']) || a.name.localeCompare(b.name))
+    .sort((a, b) => (a.ranking ?? Number.MAX_SAFE_INTEGER) - (b.ranking ?? Number.MAX_SAFE_INTEGER)
+      || (levelWeight[b.level || 'amateur'] - levelWeight[a.level || 'amateur'])
+      || a.name.localeCompare(b.name))
   const seedIndexes = getSeedSlotIndexes(bracketSize)
   const byeCount = bracketSize - participants.length
 
@@ -401,56 +403,15 @@ export function generateDoubleEliminationMatches(
 
   const winnerRounds = getKnockoutRounds(getBracketSize(participants.length))
   const firstWinnersRound = winners.filter((match) => match.round === 1).sort((a, b) => a.position - b.position)
-  const losers: Match[] = []
-  const makeLosersRound = (matchCount: number, round: number): Match[] => Array.from({ length: matchCount }, (_, position) => ({
-    id: generateId(),
-    tournamentId,
-    stage: 'losers' as const,
-    round,
-    position,
-    scheduledAt: '',
-    courtName: '',
-    homeParticipantId: '',
-    awayParticipantId: '',
-  }))
+  const losers = generateKnockoutSkeleton(tournamentId, firstWinnersRound.length, 1, 'losers')
+  const firstLosersRound = losers.filter((match) => match.round === 1).sort((a, b) => a.position - b.position)
 
-  let losersRoundNumber = 1
-  let previousRound = makeLosersRound(firstWinnersRound.length / 2, losersRoundNumber++)
-  losers.push(...previousRound)
   firstWinnersRound.forEach((match, index) => {
-    match.loserNextMatchId = previousRound[Math.floor(index / 2)].id
+    const destination = firstLosersRound[Math.floor(index / 2)]
+    if (!destination) return
+    match.loserNextMatchId = destination.id
     match.loserNextMatchSlot = index % 2 === 0 ? 'home' : 'away'
   })
-
-  for (let winnerRound = 2; winnerRound <= winnerRounds; winnerRound++) {
-    const currentWinnersRound = winners
-      .filter((match) => match.round === winnerRound)
-      .sort((a, b) => a.position - b.position)
-    const mergeRound = makeLosersRound(currentWinnersRound.length, losersRoundNumber++)
-    losers.push(...mergeRound)
-
-    currentWinnersRound.forEach((match, index) => {
-      match.loserNextMatchId = mergeRound[index].id
-      match.loserNextMatchSlot = 'home'
-    })
-    previousRound.forEach((match, index) => {
-      match.nextMatchId = mergeRound[index].id
-      match.nextMatchSlot = 'away'
-    })
-
-    if (winnerRound === winnerRounds) {
-      previousRound = mergeRound
-      continue
-    }
-
-    const consolidationRound = makeLosersRound(mergeRound.length / 2, losersRoundNumber++)
-    losers.push(...consolidationRound)
-    mergeRound.forEach((match, index) => {
-      match.nextMatchId = consolidationRound[Math.floor(index / 2)].id
-      match.nextMatchSlot = index % 2 === 0 ? 'home' : 'away'
-    })
-    previousRound = consolidationRound
-  }
 
   if (!includeGrandFinal) {
     resolveBracketByes([...winners, ...losers])
@@ -458,12 +419,12 @@ export function generateDoubleEliminationMatches(
   }
 
   const winnersFinal = winners.find((match) => match.round === winnerRounds && match.position === 0)
-  const losersFinal = previousRound[0]
+  const losersFinal = losers.find((match) => !match.nextMatchId)
   const finalMatch: Match = {
     id: generateId(),
     tournamentId,
     stage: 'final',
-    round: losersRoundNumber,
+    round: Math.max(winnerRounds, getKnockoutRounds(firstWinnersRound.length)) + 1,
     position: 0,
     scheduledAt: '',
     courtName: '',
@@ -495,8 +456,9 @@ export function buildDoubleEliminationSchedule(
   const sorted = matches
     .filter((m) => !m.isBye)
     .sort((a, b) => {
-      if (a.round !== b.round) return a.round - b.round
-      return (stageOrder[a.stage] || 0) - (stageOrder[b.stage] || 0)
+      const stageDifference = (stageOrder[a.stage] || 0) - (stageOrder[b.stage] || 0)
+      if (stageDifference !== 0) return stageDifference
+      return a.round - b.round
     })
   const [baseHours, baseMinutes] = startTime.split(':').map(Number)
   let current = new Date(`${startDate}T${String(baseHours).padStart(2, '0')}:${String(baseMinutes).padStart(2, '0')}:00`)
