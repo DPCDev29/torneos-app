@@ -1,0 +1,208 @@
+﻿{
+  "changeName": "minitorneos-webapp",
+  "changeDir": "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp",
+  "schemaName": "spec-driven",
+  "contextFiles": {
+    "proposal": [
+      "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp\\proposal.md"
+    ],
+    "specs": [
+      "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp\\specs\\bracket-visualization\\spec.md",
+      "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp\\specs\\match-scheduling\\spec.md",
+      "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp\\specs\\player-registration\\spec.md",
+      "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp\\specs\\responsive-ui\\spec.md",
+      "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp\\specs\\results-tracking\\spec.md",
+      "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp\\specs\\tournament-management\\spec.md"
+    ],
+    "design": [
+      "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp\\design.md"
+    ],
+    "tasks": [
+      "C:\\Users\\RESTAURANT\\source\\repos\\torneos-app\\openspec\\changes\\minitorneos-webapp\\tasks.md"
+    ]
+  },
+  "progress": {
+    "total": 35,
+    "complete": 34,
+    "remaining": 1
+  },
+  "tasks": [
+    {
+      "id": "1",
+      "description": "1.1 Inicializar proyecto React con Vite en `c:\\Users\\RESTAURANT\\source\\repos\\torneos-app`.",
+      "done": true
+    },
+    {
+      "id": "2",
+      "description": "1.2 Instalar dependencias: `react-router-dom`, `tailwindcss`, `dexie` (IndexedDB), `lucide-react`.",
+      "done": true
+    },
+    {
+      "id": "3",
+      "description": "1.3 Configurar Tailwind CSS y estructura de carpetas (`src/components`, `src/pages`, `src/hooks`, `src/db`, `src/utils`).",
+      "done": true
+    },
+    {
+      "id": "4",
+      "description": "2.1 Definir tipos TypeScript para `Tournament`, `Participant`, `Match`, `Group`, `Stage`.",
+      "done": true
+    },
+    {
+      "id": "5",
+      "description": "2.2 Implementar capa de almacenamiento con Dexie.js: tablas `tournaments`, `participants`, `matches`, `groups`.",
+      "done": true
+    },
+    {
+      "id": "6",
+      "description": "2.3 Agregar funciones de importación/exportación de torneo a JSON.",
+      "done": true
+    },
+    {
+      "id": "7",
+      "description": "3.1 Crear página de lista de torneos con botón \"Nuevo torneo\".",
+      "done": true
+    },
+    {
+      "id": "8",
+      "description": "3.2 Implementar formulario de creación/edición de torneo (nombre, fecha, sede, formato).",
+      "done": true
+    },
+    {
+      "id": "9",
+      "description": "3.3 Implementar validación de campos obligatorios y mensajes de error.",
+      "done": true
+    },
+    {
+      "id": "10",
+      "description": "3.4 Implementar eliminación de torneo con confirmación.",
+      "done": true
+    },
+    {
+      "id": "11",
+      "description": "4.1 Crear vista de participantes del torneo.",
+      "done": true
+    },
+    {
+      "id": "12",
+      "description": "4.2 Implementar formulario de registro con nombre, contacto, color y representante.",
+      "done": true
+    },
+    {
+      "id": "13",
+      "description": "4.3 Validar nombres duplicados dentro del mismo torneo.",
+      "done": true
+    },
+    {
+      "id": "14",
+      "description": "4.4 Permitir editar y eliminar participantes sin partidos jugados.",
+      "done": true
+    },
+    {
+      "id": "15",
+      "description": "5.1 Implementar generador de partidos de grupos (todos contra todos).",
+      "done": true
+    },
+    {
+      "id": "16",
+      "description": "5.2 Implementar asignación de horarios y canchas sin solapamientos.",
+      "done": true
+    },
+    {
+      "id": "17",
+      "description": "5.3 Implementar generación de fase eliminatoria (cuartos, semifinal, final) según número de participantes.",
+      "done": true
+    },
+    {
+      "id": "18",
+      "description": "5.4 Permitir re-generar horarios tras agregar/quitar participantes manteniendo resultados ya registrados.",
+      "done": true
+    },
+    {
+      "id": "19",
+      "description": "6.1 Crear componente de visualización de grupos (tabla de posiciones + lista de partidos).",
+      "done": true
+    },
+    {
+      "id": "20",
+      "description": "6.2 Crear componente de bracket eliminatorio con conectores visuales.",
+      "done": true
+    },
+    {
+      "id": "21",
+      "description": "6.3 Aplicar colores de participantes y mostrar horarios/canchas en cada partido.",
+      "done": true
+    },
+    {
+      "id": "22",
+      "description": "6.4 Implementar scroll horizontal fluido en móvil para el bracket.",
+      "done": true
+    },
+    {
+      "id": "23",
+      "description": "7.1 Crear formulario de registro de marcador para cada partido.",
+      "done": true
+    },
+    {
+      "id": "24",
+      "description": "7.2 Calcular puntos, diferencia y goles/puntos a favor para tabla de grupos.",
+      "done": true
+    },
+    {
+      "id": "25",
+      "description": "7.3 Ordenar tabla de grupos con criterios de desempate.",
+      "done": true
+    },
+    {
+      "id": "26",
+      "description": "7.4 Avanzar automáticamente ganadores de grupos a la fase eliminatoria.",
+      "done": true
+    },
+    {
+      "id": "27",
+      "description": "7.5 Avanzar ganadores de llaves a la siguiente ronda del bracket.",
+      "done": true
+    },
+    {
+      "id": "28",
+      "description": "8.1 Aplicar clases mobile-first de Tailwind a todas las vistas.",
+      "done": true
+    },
+    {
+      "id": "29",
+      "description": "8.2 Verificar áreas de toque mínimas de 44x44 px en botones.",
+      "done": true
+    },
+    {
+      "id": "30",
+      "description": "8.3 Implementar menú de navegación adaptable (drawer/bottom sheet en móvil).",
+      "done": true
+    },
+    {
+      "id": "31",
+      "description": "8.4 Probar visualización en resoluciones 375px, 768px y 1440px.",
+      "done": false
+    },
+    {
+      "id": "32",
+      "description": "9.1 Configurar `vite.config.ts` para build estática.",
+      "done": true
+    },
+    {
+      "id": "33",
+      "description": "9.2 Agregar scripts `build` y `preview`.",
+      "done": true
+    },
+    {
+      "id": "34",
+      "description": "9.3 Verificar que la aplicación compila sin errores.",
+      "done": true
+    },
+    {
+      "id": "35",
+      "description": "9.4 (Opcional) Desplegar demo con `npm run preview` o servicio estático local.",
+      "done": true
+    }
+  ],
+  "state": "ready",
+  "instruction": "Read context files, work through pending tasks, mark complete as you go.\nPause if you hit blockers or need clarification."
+}
