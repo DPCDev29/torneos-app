@@ -15,11 +15,17 @@ export function PublicBracketPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    console.log('PublicBracketPage useEffect triggered')
+    console.log('tournamentId:', tournamentId)
+    console.log('token:', token)
+    
     if (!tournamentId || !token) {
+      console.log('Missing tournamentId or token')
       setError('Link inválido.')
       return
     }
     const client = createPublicClient()
+    console.log('Client created:', client)
     
     const loadData = async () => {
       try {
