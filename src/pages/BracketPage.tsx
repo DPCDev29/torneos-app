@@ -93,6 +93,17 @@ export function BracketPage() {
       m.nextMatchId === match.id && m.nextMatchSlot === slot
     )
     
+    console.log(`Match ${getMatchId(match)} ${slot}:`, {
+      matchId: match.id,
+      slot,
+      sourceMatch: sourceMatch ? getMatchId(sourceMatch) : 'none',
+      allNextMatches: matches.filter(m => m.nextMatchId === match.id).map(m => ({
+        id: getMatchId(m),
+        nextMatchId: m.nextMatchId,
+        nextMatchSlot: m.nextMatchSlot
+      }))
+    })
+    
     if (sourceMatch) {
       return (
         <div className="rounded bg-amber-50 px-2 py-1 text-sm text-amber-700">
