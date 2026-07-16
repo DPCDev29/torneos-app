@@ -14,9 +14,15 @@ import { PublicBracketPage } from './pages/PublicBracketPage'
 function AppContent() {
   const { session, loading } = useAuth()
   const { pathname } = useLocation()
+  
+  // Public routes accessible without authentication
+  if (pathname.startsWith('/public/')) {
+    return <PublicBracketPage />
+  }
+  
   if (loading) return <main className="flex min-h-screen items-center justify-center text-gray-600">Cargando...</main>
+  
   if (!session) {
-    if (pathname.startsWith('/public/')) return <PublicBracketPage />
     return pathname === '/register' ? <RegisterPage /> : <LoginPage />
   }
 
