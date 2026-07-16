@@ -13,10 +13,13 @@ import { PublicBracketPage } from './pages/PublicBracketPage'
 
 function AppContent() {
   const { session, loading } = useAuth()
-  const { pathname } = useLocation()
+  const location = useLocation()
+  
+  console.log('Current location:', location.pathname)
   
   // Public routes accessible without authentication
-  if (pathname.startsWith('/public/')) {
+  if (location.pathname.startsWith('/public/')) {
+    console.log('Rendering PublicBracketPage')
     return <PublicBracketPage />
   }
   
@@ -26,6 +29,7 @@ function AppContent() {
     return (
       <Routes>
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/public/:id" element={<PublicBracketPage />} />
         <Route path="*" element={<LoginPage />} />
       </Routes>
     )
