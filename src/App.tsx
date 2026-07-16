@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { TournamentListPage } from './pages/TournamentListPage'
 import { TournamentFormPage } from './pages/TournamentFormPage'
 import { TournamentDetailPage } from './pages/TournamentDetailPage'
@@ -6,8 +6,16 @@ import { ParticipantsPage } from './pages/ParticipantsPage'
 import { BracketPage } from './pages/BracketPage'
 import { MatchesPage } from './pages/MatchesPage'
 import { Layout } from './components/Layout'
+import { AuthProvider, useAuth } from './supabase/AuthProvider'
+import { LoginPage } from './pages/LoginPage'
+import { RegisterPage } from './pages/RegisterPage'
 
-function App() {
+function AppContent() {
+  const { session, loading } = useAuth()
+  const { pathname } = useLocation()
+  if (loading) return <main className="flex min-h-screen items-center justify-center text-gray-600">Cargando...</main>
+  if (!session) return pathname === '/register' ? <RegisterPage /> : <LoginPage />
+
   return (
     <Layout>
       <Routes>
@@ -21,6 +29,10 @@ function App() {
       </Routes>
     </Layout>
   )
+}
+
+function App() {
+  return <AuthProvider><AppContent /></AuthProvider>
 }
 
 export default App

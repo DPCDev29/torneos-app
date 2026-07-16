@@ -16,20 +16,24 @@ export function TournamentDetailPage() {
 
   useEffect(() => {
     if (!id) return
-    Promise.all([
-      db.tournaments.get(id),
-      db.participants.where('tournamentId').equals(id).toArray(),
-      db.matches.where('tournamentId').equals(id).toArray(),
-      db.groups.where('tournamentId').equals(id).toArray(),
-    ]).then(([t, p, m, g]) => {
-      setTournament(t || null)
-      setParticipants(p)
-      setMatches(m)
-      setGroups(g)
-      if (t?.format === 'league') {
-        setStandings(calculateStandingsForParticipantIds(p.map((x) => x.id), m))
-      }
-    })
+    const loadTournament = () => {
+      Promise.all([
+        db.tournaments.get(id),
+        db.participants.where('tournamentId').equals(id).toArray(),
+        db.matches.where('tournamentId').equals(id).toArray(),
+        db.groups.where('tournamentId').equals(id).toArray(),
+      ]).then(([t, p, m, g]) => {
+        setTournament(t || null)
+        setParticipants(p)
+        setMatches(m)
+        setGroups(g)
+        if (t?.format === 'league') {
+          setStandings(calculateStandingsForParticipantIds(p.map((x) => x.id), m))
+        }
+      })
+    }
+    loadTournament()
+    return db.subscribeToTournament(id, loadTournament)
   }, [id])
 
   const handleGenerate = async () => {

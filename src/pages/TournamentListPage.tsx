@@ -8,7 +8,11 @@ export function TournamentListPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
 
   useEffect(() => {
-    db.tournaments.orderBy('createdAt').reverse().toArray().then(setTournaments)
+    const loadTournaments = () => {
+      db.tournaments.orderBy('createdAt').reverse().toArray().then(setTournaments)
+    }
+    loadTournaments()
+    return db.subscribeToTournaments(loadTournaments)
   }, [])
 
   return (

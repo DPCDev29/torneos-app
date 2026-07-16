@@ -21,6 +21,7 @@ export function ParticipantsPage() {
   useEffect(() => {
     if (!tournamentId) return
     loadParticipants()
+    return db.subscribeToTournament(tournamentId, loadParticipants)
   }, [tournamentId])
 
   const loadParticipants = () => {

@@ -15,17 +15,21 @@ export function BracketPage() {
 
   useEffect(() => {
     if (!tournamentId) return
-    Promise.all([
-      db.tournaments.get(tournamentId),
-      db.participants.where('tournamentId').equals(tournamentId).toArray(),
-      db.matches.where('tournamentId').equals(tournamentId).toArray(),
-      db.groups.where('tournamentId').equals(tournamentId).toArray(),
-    ]).then(([t, p, m, g]) => {
-      setTournament(t || null)
-      setParticipants(p)
-      setMatches(m)
-      setGroups(g)
-    })
+    const loadBracket = () => {
+      Promise.all([
+        db.tournaments.get(tournamentId),
+        db.participants.where('tournamentId').equals(tournamentId).toArray(),
+        db.matches.where('tournamentId').equals(tournamentId).toArray(),
+        db.groups.where('tournamentId').equals(tournamentId).toArray(),
+      ]).then(([t, p, m, g]) => {
+        setTournament(t || null)
+        setParticipants(p)
+        setMatches(m)
+        setGroups(g)
+      })
+    }
+    loadBracket()
+    return db.subscribeToTournament(tournamentId, loadBracket)
   }, [tournamentId])
 
   const participantName = (id: string) => participants.find((p) => p.id === id)?.name || '—'

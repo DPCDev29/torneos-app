@@ -16,27 +16,31 @@ export function MatchesPage() {
 
   useEffect(() => {
     if (!tournamentId) return
-    Promise.all([
-      db.matches.where('tournamentId').equals(tournamentId).toArray(),
-      db.participants.where('tournamentId').equals(tournamentId).toArray(),
-      db.tournaments.get(tournamentId),
-    ]).then(([m, p, t]) => {
-      setMatches(m)
-      setParticipants(p)
-      setTournament(t || null)
-      const init: Record<string, MatchSet[]> = {}
-      m.forEach((match) => {
-        const legacy = match as unknown as { homeScore?: number; awayScore?: number }
-        if ((!match.sets || match.sets.length === 0) && legacy.homeScore !== undefined && legacy.awayScore !== undefined) {
-          init[match.id] = [{ home: legacy.homeScore, away: legacy.awayScore }]
-        } else {
-          init[match.id] = match.sets && match.sets.length > 0
-            ? match.sets.map((s) => ({ home: s.home, away: s.away, usedBreakHome: s.usedBreakHome, usedBreakAway: s.usedBreakAway }))
-            : [{ home: 0, away: 0 }]
-        }
+    const loadMatches = () => {
+      Promise.all([
+        db.matches.where('tournamentId').equals(tournamentId).toArray(),
+        db.participants.where('tournamentId').equals(tournamentId).toArray(),
+        db.tournaments.get(tournamentId),
+      ]).then(([m, p, t]) => {
+        setMatches(m)
+        setParticipants(p)
+        setTournament(t || null)
+        const init: Record<string, MatchSet[]> = {}
+        m.forEach((match) => {
+          const legacy = match as unknown as { homeScore?: number; awayScore?: number }
+          if ((!match.sets || match.sets.length === 0) && legacy.homeScore !== undefined && legacy.awayScore !== undefined) {
+            init[match.id] = [{ home: legacy.homeScore, away: legacy.awayScore }]
+          } else {
+            init[match.id] = match.sets && match.sets.length > 0
+              ? match.sets.map((s) => ({ home: s.home, away: s.away, usedBreakHome: s.usedBreakHome, usedBreakAway: s.usedBreakAway }))
+              : [{ home: 0, away: 0 }]
+          }
+        })
+        setMatchSets(init)
       })
-      setMatchSets(init)
-    })
+    }
+    loadMatches()
+    return db.subscribeToTournament(tournamentId, loadMatches)
   }, [tournamentId])
 
   const participantName = (id: string) => participants.find((p) => p.id === id)?.name || '—'

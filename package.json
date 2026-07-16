@@ -10,6 +10,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.7",
     "dexie": "^4.0.8",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
