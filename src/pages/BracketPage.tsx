@@ -88,21 +88,21 @@ export function BracketPage() {
   }
 
   const renderPending = (match: Match, slot: 'home' | 'away') => {
-    // Find which previous match feeds into this slot
-    const sourceMatch = matches.find(m => 
-      m.nextMatchId === match.id && m.nextMatchSlot === slot
-    )
+    // Find matches that feed into this match
+    const sourceMatches = matches.filter(m => m.nextMatchId === match.id)
     
-    console.log(`Match ${getMatchId(match)} ${slot}:`, {
-      matchId: match.id,
-      slot,
-      sourceMatch: sourceMatch ? getMatchId(sourceMatch) : 'none',
-      allNextMatches: matches.filter(m => m.nextMatchId === match.id).map(m => ({
-        id: getMatchId(m),
-        nextMatchId: m.nextMatchId,
-        nextMatchSlot: m.nextMatchSlot
-      }))
-    })
+    // When nextMatchSlot is null, infer from position: even positions go to home, odd to away
+    let sourceMatch: Match | undefined
+    if (sourceMatches.length > 0) {
+      sourceMatch = sourceMatches.find(m => {
+        if (m.nextMatchSlot) {
+          return m.nextMatchSlot === slot
+        }
+        // Infer slot from position when nextMatchSlot is null
+        const inferredSlot = m.position % 2 === 0 ? 'home' : 'away'
+        return inferredSlot === slot
+      })
+    }
     
     if (sourceMatch) {
       return (
@@ -113,9 +113,18 @@ export function BracketPage() {
     }
     
     // Check if it comes from loser bracket
-    const loserSourceMatch = matches.find(m =>
-      m.loserNextMatchId === match.id && m.loserNextMatchSlot === slot
-    )
+    const loserSourceMatches = matches.filter(m => m.loserNextMatchId === match.id)
+    let loserSourceMatch: Match | undefined
+    if (loserSourceMatches.length > 0) {
+      loserSourceMatch = loserSourceMatches.find(m => {
+        if (m.loserNextMatchSlot) {
+          return m.loserNextMatchSlot === slot
+        }
+        // Infer slot from position when loserNextMatchSlot is null
+        const inferredSlot = m.position % 2 === 0 ? 'home' : 'away'
+        return inferredSlot === slot
+      })
+    }
     
     if (loserSourceMatch) {
       return (
