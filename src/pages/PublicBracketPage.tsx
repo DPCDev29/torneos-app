@@ -94,6 +94,18 @@ export function PublicBracketPage() {
     return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
   }
 
+  const getMatchId = (match: Match) => {
+    const stagePrefix = match.stage === 'winners' ? 'W' : match.stage === 'losers' ? 'L' : 'F'
+    const allStageMatches = matches
+      .filter(m => m.stage === match.stage && !m.isBye)
+      .sort((a, b) => {
+        if (a.round !== b.round) return a.round - b.round
+        return a.position - b.position
+      })
+    const index = allStageMatches.findIndex(m => m.id === match.id)
+    return `${stagePrefix}${index + 1}`
+  }
+
   const renderParticipant = (id: string, winner?: string) => {
     const isWinner = winner === id && Boolean(winner)
     return (
@@ -104,9 +116,25 @@ export function PublicBracketPage() {
     )
   }
 
-  const renderPending = () => (
-    <div className="rounded px-2 py-1 text-sm text-gray-400">Por definir</div>
-  )
+  const renderPending = (match: Match, slot: 'home' | 'away') => {
+    // Check if this slot comes from a previous match
+    const sourceMatchId = slot === 'home' 
+      ? (match.round === 1 ? null : matches.find(m => m.nextMatchId === match.id && m.nextMatchSlot === 'home')?.id)
+      : (match.round === 1 ? null : matches.find(m => m.nextMatchId === match.id && m.nextMatchSlot === 'away')?.id)
+    
+    if (sourceMatchId) {
+      const sourceMatch = matches.find(m => m.id === sourceMatchId)
+      if (sourceMatch) {
+        return (
+          <div className="rounded bg-amber-50 px-2 py-1 text-sm text-amber-700">
+            🏆 Ganador {getMatchId(sourceMatch)}
+          </div>
+        )
+      }
+    }
+    
+    return <div className="rounded px-2 py-1 text-sm text-gray-400">Por definir</div>
+  }
 
   const renderBracket = (stage: 'knockout' | 'winners' | 'losers' | 'final', title: string) => {
     const stageMatches = matches.filter((m) => m.stage === stage && !m.isBye)
@@ -126,14 +154,17 @@ export function PublicBracketPage() {
                   .filter((m) => m.round === round)
                   .sort((a, b) => a.position - b.position)
                   .map((m) => (
-                    <div key={m.id} className="card p-3">
+                    <div key={m.id} className="card relative p-3">
+                      <div className="absolute right-2 top-2 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-700">
+                        {getMatchId(m)}
+                      </div>
                       <div className="mb-2 flex flex-col gap-1">
                         <div className="text-sm font-bold text-gray-700">📅 {formatTime(m.scheduledAt)}</div>
                         <div className="text-sm font-bold text-blue-600">🏟️ {m.courtName}</div>
                       </div>
-                      {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId) : renderPending()}
+                      {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId) : renderPending(m, 'home')}
                       <div className="my-1 text-center text-xs text-gray-400">vs</div>
-                      {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId) : renderPending()}
+                      {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId) : renderPending(m, 'away')}
                       {isMatchFinished(m) && (
                         <div className="mt-2 text-center font-mono text-sm font-semibold">
                           {countSetsWon(m.sets, 'home')} - {countSetsWon(m.sets, 'away')}
