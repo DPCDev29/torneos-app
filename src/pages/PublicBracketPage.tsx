@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams, useLocation } from 'react-router-dom'
 import { Trophy } from 'lucide-react'
 import { createPublicClient } from '../supabase/publicClient'
 import type { Tournament, Participant, Match } from '../types'
 import { countSetsWon, isMatchFinished } from '../utils/tournament'
 
 export function PublicBracketPage() {
-  const { id: tournamentId } = useParams<{ id: string }>()
+  const { id: paramId } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
+  const location = useLocation()
+  
+  // Extract tournament ID from URL path if not in params
+  const tournamentId = paramId || location.pathname.split('/').pop() || ''
   const token = searchParams.get('token')
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [participants, setParticipants] = useState<Participant[]>([])
