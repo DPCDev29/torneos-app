@@ -7,12 +7,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.')
 }
 
-export function createPublicClient(publicToken: string) {
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        'x-public-token': publicToken,
-      },
-    },
-  })
+export function createPublicClient() {
+  return createClient(supabaseUrl, supabaseAnonKey)
 }

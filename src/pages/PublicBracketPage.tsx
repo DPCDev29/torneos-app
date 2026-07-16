@@ -19,20 +19,38 @@ export function PublicBracketPage() {
       setError('Link inválido.')
       return
     }
-    const client = createPublicClient(token)
-    Promise.all([
-      client.from('tournaments').select().eq('id', tournamentId).eq('public_token', token).maybeSingle(),
-      client.from('participants').select().eq('tournament_id', tournamentId),
-      client.from('matches').select().eq('tournament_id', tournamentId),
-    ]).then(([tRes, pRes, mRes]) => {
-      if (tRes.error || !tRes.data) {
-        setError('Torneo no encontrado o link revocado.')
-        return
+    const client = createPublicClient()
+    
+    const loadData = async () => {
+      try {
+        // First verify the tournament exists and token matches
+        const tRes = await client.from('tournaments')
+          .select()
+          .eq('id', tournamentId)
+          .eq('public_token', token)
+          .maybeSingle()
+        
+        if (tRes.error || !tRes.data) {
+          setError('Torneo no encontrado o link revocado.')
+          return
+        }
+        
+        setTournament(tRes.data as unknown as Tournament)
+        
+        // Load related data
+        const [pRes, mRes] = await Promise.all([
+          client.from('participants').select().eq('tournament_id', tournamentId),
+          client.from('matches').select().eq('tournament_id', tournamentId),
+        ])
+        
+        setParticipants((pRes.data || []) as unknown as Participant[])
+        setMatches((mRes.data || []) as unknown as Match[])
+      } catch {
+        setError('Error al cargar el torneo.')
       }
-      setTournament(tRes.data as unknown as Tournament)
-      setParticipants((pRes.data || []) as unknown as Participant[])
-      setMatches((mRes.data || []) as unknown as Match[])
-    })
+    }
+    
+    loadData()
   }, [tournamentId, token])
 
   const participantName = (id: string) => participants.find((p) => p.id === id)?.name || '—'
