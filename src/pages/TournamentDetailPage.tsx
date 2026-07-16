@@ -92,7 +92,7 @@ export function TournamentDetailPage() {
 
   const handleCopyLink = () => {
     if (!tournament?.publicToken) return
-    const link = `${window.location.origin}${window.location.pathname}#/public/${id}?token=${tournament.publicToken}`
+    const link = `${window.location.origin}/#/public/${id}?token=${tournament.publicToken}`
     navigator.clipboard.writeText(link)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -146,7 +146,7 @@ export function TournamentDetailPage() {
             <input
               type="text"
               readOnly
-              value={`${window.location.origin}${window.location.pathname}#/public/${id}?token=${tournament.publicToken}`}
+              value={`${window.location.origin}/#/public/${id}?token=${tournament.publicToken}`}
               className="input flex-1 text-sm"
             />
             <button onClick={handleCopyLink} className="btn-primary gap-1">
