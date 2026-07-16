@@ -30,7 +30,15 @@ export function PublicBracketPage() {
           .eq('public_token', token)
           .maybeSingle()
         
-        if (tRes.error || !tRes.data) {
+        console.log('Tournament query result:', tRes)
+        
+        if (tRes.error) {
+          console.error('Tournament query error:', tRes.error)
+          setError(`Error: ${tRes.error.message}`)
+          return
+        }
+        
+        if (!tRes.data) {
           setError('Torneo no encontrado o link revocado.')
           return
         }
@@ -43,9 +51,13 @@ export function PublicBracketPage() {
           client.from('matches').select().eq('tournament_id', tournamentId),
         ])
         
+        console.log('Participants:', pRes)
+        console.log('Matches:', mRes)
+        
         setParticipants((pRes.data || []) as unknown as Participant[])
         setMatches((mRes.data || []) as unknown as Match[])
-      } catch {
+      } catch (err) {
+        console.error('Load error:', err)
         setError('Error al cargar el torneo.')
       }
     }
