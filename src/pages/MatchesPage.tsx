@@ -115,7 +115,7 @@ export function MatchesPage() {
 
   const stageMatches = (stage: 'group' | 'knockout' | 'league' | 'winners' | 'losers' | 'final') => {
     return matches
-      .filter((m) => m.stage === stage && !m.isBye && Boolean(m.homeParticipantId && m.awayParticipantId))
+      .filter((m) => m.stage === stage && !m.isBye)
       .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
   }
 
@@ -273,6 +273,8 @@ export function MatchesPage() {
     const homeColor = participantColor(m.homeParticipantId)
     const awayColor = participantColor(m.awayParticipantId)
     const sets = matchSets[m.id] || []
+    const hasParticipants = Boolean(m.homeParticipantId && m.awayParticipantId)
+    
     return (
       <div key={m.id} className="card space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -285,6 +287,9 @@ export function MatchesPage() {
               <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: awayColor }} />
               <span className="flex-1">{participantName(m.awayParticipantId)}</span>
             </div>
+            {!hasParticipants && (
+              <div className="mt-1 text-xs text-amber-600">⚠ Esperando participantes</div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <input
@@ -302,18 +307,28 @@ export function MatchesPage() {
                 <option key={court} value={court}>{court}</option>
               ))}
             </select>
-            <button type="button" onClick={() => addSet(m.id)} className="btn-secondary text-xs">
+            <button 
+              type="button" 
+              onClick={() => addSet(m.id)} 
+              className="btn-secondary text-xs"
+              disabled={!hasParticipants}
+            >
               + Set
             </button>
             <button
               type="button"
               onClick={() => setRefereeMatch(m)}
               className="btn-secondary gap-1 text-xs"
+              disabled={!hasParticipants}
             >
               <UserCheck className="h-4 w-4" />
               Árbitro
             </button>
-            <button onClick={() => saveMatch(m)} className="btn-primary gap-1">
+            <button 
+              onClick={() => saveMatch(m)} 
+              className="btn-primary gap-1"
+              disabled={!hasParticipants}
+            >
               <Save className="h-4 w-4" />
               Guardar
             </button>
