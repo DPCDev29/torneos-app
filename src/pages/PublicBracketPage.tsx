@@ -53,7 +53,18 @@ export function PublicBracketPage() {
           return
         }
         
-        setTournament(tRes.data as unknown as Tournament)
+        // Transform snake_case to camelCase
+        const transformToCamel = (obj: any): any => {
+          if (!obj) return obj
+          const result: any = {}
+          Object.keys(obj).forEach(key => {
+            const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+            result[camelKey] = obj[key]
+          })
+          return result
+        }
+        
+        setTournament(transformToCamel(tRes.data) as Tournament)
         
         // Load related data
         const [pRes, mRes] = await Promise.all([
@@ -64,8 +75,8 @@ export function PublicBracketPage() {
         console.log('Participants:', pRes)
         console.log('Matches:', mRes)
         
-        setParticipants((pRes.data || []) as unknown as Participant[])
-        setMatches((mRes.data || []) as unknown as Match[])
+        setParticipants((pRes.data || []).map(transformToCamel) as Participant[])
+        setMatches((mRes.data || []).map(transformToCamel) as Match[])
       } catch (err) {
         console.error('Load error:', err)
         setError('Error al cargar el torneo.')
