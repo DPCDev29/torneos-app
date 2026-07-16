@@ -116,7 +116,12 @@ export function MatchesPage() {
   const stageMatches = (stage: 'group' | 'knockout' | 'league' | 'winners' | 'losers' | 'final') => {
     return matches
       .filter((m) => m.stage === stage && !m.isBye)
-      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+      .sort((a, b) => {
+        // First sort by round
+        if (a.round !== b.round) return a.round - b.round
+        // Then by position within the round
+        return a.position - b.position
+      })
   }
 
   const toDateTimeLocal = (iso: string) => {
