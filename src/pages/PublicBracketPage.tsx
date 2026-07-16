@@ -117,20 +117,30 @@ export function PublicBracketPage() {
   }
 
   const renderPending = (match: Match, slot: 'home' | 'away') => {
-    // Check if this slot comes from a previous match
-    const sourceMatchId = slot === 'home' 
-      ? (match.round === 1 ? null : matches.find(m => m.nextMatchId === match.id && m.nextMatchSlot === 'home')?.id)
-      : (match.round === 1 ? null : matches.find(m => m.nextMatchId === match.id && m.nextMatchSlot === 'away')?.id)
+    // Find which previous match feeds into this slot
+    const sourceMatch = matches.find(m => 
+      m.nextMatchId === match.id && m.nextMatchSlot === slot
+    )
     
-    if (sourceMatchId) {
-      const sourceMatch = matches.find(m => m.id === sourceMatchId)
-      if (sourceMatch) {
-        return (
-          <div className="rounded bg-amber-50 px-2 py-1 text-sm text-amber-700">
-            🏆 Ganador {getMatchId(sourceMatch)}
-          </div>
-        )
-      }
+    if (sourceMatch) {
+      return (
+        <div className="rounded bg-amber-50 px-2 py-1 text-sm text-amber-700">
+          🏆 Ganador {getMatchId(sourceMatch)}
+        </div>
+      )
+    }
+    
+    // Check if it comes from loser bracket
+    const loserSourceMatch = matches.find(m =>
+      m.loserNextMatchId === match.id && m.loserNextMatchSlot === slot
+    )
+    
+    if (loserSourceMatch) {
+      return (
+        <div className="rounded bg-orange-50 px-2 py-1 text-sm text-orange-700">
+          💔 Perdedor {getMatchId(loserSourceMatch)}
+        </div>
+      )
     }
     
     return <div className="rounded px-2 py-1 text-sm text-gray-400">Por definir</div>
