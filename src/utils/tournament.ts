@@ -5,6 +5,43 @@ export function isMatchFinished(match: Match): boolean {
   return Boolean(match.sets && match.sets.length > 0 && match.sets.every((s) => s.home !== undefined && s.away !== undefined))
 }
 
+export type FirstRoundSlot = 'home' | 'away'
+
+export function isManuallyEditableFirstRoundMatch(match: Match): boolean {
+  return (match.stage === 'knockout' || match.stage === 'winners')
+    && match.round === 1
+    && !match.isBye
+    && Boolean(match.homeParticipantId && match.awayParticipantId)
+}
+
+export function canManuallyArrangeFirstRound(matches: Match[]): boolean {
+  return !matches.some((match) => !match.isBye && (Boolean(match.winnerParticipantId) || Boolean(match.sets?.length)))
+}
+
+export function swapFirstRoundParticipants(
+  matches: Match[],
+  sourceMatchId: string,
+  sourceSlot: FirstRoundSlot,
+  targetMatchId: string,
+  targetSlot: FirstRoundSlot,
+): Match[] | null {
+  if (!canManuallyArrangeFirstRound(matches)) return null
+  const source = matches.find((match) => match.id === sourceMatchId)
+  const target = matches.find((match) => match.id === targetMatchId)
+  if (!source || !target || !isManuallyEditableFirstRoundMatch(source) || !isManuallyEditableFirstRoundMatch(target)) return null
+  if (source.id === target.id && sourceSlot === targetSlot) return matches
+
+  const sourceParticipantId = source[`${sourceSlot}ParticipantId`]
+  const targetParticipantId = target[`${targetSlot}ParticipantId`]
+  if (!sourceParticipantId || !targetParticipantId) return null
+
+  return matches.map((match) => {
+    if (match.id === source.id) return { ...match, [`${sourceSlot}ParticipantId`]: targetParticipantId }
+    if (match.id === target.id) return { ...match, [`${targetSlot}ParticipantId`]: sourceParticipantId }
+    return match
+  })
+}
+
 export function countSetsWon(sets: MatchSet[] | undefined, side: 'home' | 'away'): number {
   if (!sets) return 0
   return sets.reduce((acc, s) => {

@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Save, UserCheck } from 'lucide-react'
 import { db } from '../db'
 import type { Match, MatchSet, Participant, Tournament } from '../types'
-import { advanceLoser, advanceWinner, fillKnockoutWithGroupWinners, getMatchWinner, resolveBracketByes } from '../utils/tournament'
+import { advanceLoser, advanceWinner, canManuallyArrangeFirstRound, fillKnockoutWithGroupWinners, getMatchWinner, isManuallyEditableFirstRoundMatch, resolveBracketByes, swapFirstRoundParticipants } from '../utils/tournament'
 import { RefereeModal } from '../components/RefereeModal'
 
 export function MatchesPage() {
@@ -129,6 +129,25 @@ export function MatchesPage() {
     setMatches(updated)
   }
 
+  const editableFirstRoundMatches = matches
+    .filter(isManuallyEditableFirstRoundMatch)
+    .sort((a, b) => a.position - b.position)
+  const canArrangeFixture = canManuallyArrangeFirstRound(matches)
+  const editableParticipantIds = editableFirstRoundMatches.flatMap((match) => [match.homeParticipantId, match.awayParticipantId])
+
+  const handleManualParticipantChange = async (targetMatch: Match, targetSlot: 'home' | 'away', participantId: string) => {
+    const sourceMatch = editableFirstRoundMatches.find((match) => match.homeParticipantId === participantId || match.awayParticipantId === participantId)
+    if (!sourceMatch) return
+    const sourceSlot = sourceMatch.homeParticipantId === participantId ? 'home' : 'away'
+    const updated = swapFirstRoundParticipants(matches, sourceMatch.id, sourceSlot, targetMatch.id, targetSlot)
+    if (!updated) {
+      alert('No se puede modificar el fixture después de registrar resultados.')
+      return
+    }
+    await db.matches.bulkPut(updated)
+    setMatches(updated)
+  }
+
   return (
     <div className="space-y-4">
       <Link to={`/tournaments/${tournamentId}`} className="btn-secondary gap-2">
@@ -136,6 +155,42 @@ export function MatchesPage() {
         Volver
       </Link>
       <h1 className="text-2xl font-bold text-gray-900">Partidos</h1>
+
+      {editableFirstRoundMatches.length > 0 && (
+        <section className="card space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">Armar primera ronda manualmente</h2>
+            <p className="text-sm text-gray-600">Selecciona participantes para intercambiarlos entre partidos de la primera ronda.</p>
+          </div>
+          {!canArrangeFixture && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">El fixture está bloqueado porque ya existen resultados registrados.</p>}
+          <div className="grid gap-3 lg:grid-cols-2">
+            {editableFirstRoundMatches.map((match) => (
+              <div key={match.id} className="rounded-lg border border-gray-200 p-3">
+                <p className="mb-2 text-sm font-medium text-gray-700">Partido {match.position + 1}</p>
+                <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                  <select
+                    value={match.homeParticipantId}
+                    onChange={(e) => handleManualParticipantChange(match, 'home', e.target.value)}
+                    disabled={!canArrangeFixture}
+                    className="input"
+                  >
+                    {editableParticipantIds.map((participantId) => <option key={participantId} value={participantId}>{participantName(participantId)}</option>)}
+                  </select>
+                  <span className="text-center text-sm text-gray-400">vs</span>
+                  <select
+                    value={match.awayParticipantId}
+                    onChange={(e) => handleManualParticipantChange(match, 'away', e.target.value)}
+                    disabled={!canArrangeFixture}
+                    className="input"
+                  >
+                    {editableParticipantIds.map((participantId) => <option key={participantId} value={participantId}>{participantName(participantId)}</option>)}
+                  </select>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {stageMatches('group').length > 0 && (
         <section className="space-y-3">

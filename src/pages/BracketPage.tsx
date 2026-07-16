@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { db } from '../db'
 import type { Tournament, Participant, Match, Group } from '../types'
-import { calculateStandings, countSetsWon, isMatchFinished } from '../utils/tournament'
+import { calculateStandings, canManuallyArrangeFirstRound, countSetsWon, isManuallyEditableFirstRoundMatch, isMatchFinished, swapFirstRoundParticipants, type FirstRoundSlot } from '../utils/tournament'
 
 export function BracketPage() {
   const { id: tournamentId } = useParams<{ id: string }>()
@@ -11,6 +11,7 @@ export function BracketPage() {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [matches, setMatches] = useState<Match[]>([])
   const [groups, setGroups] = useState<Group[]>([])
+  const [draggedSlot, setDraggedSlot] = useState<{ matchId: string; slot: FirstRoundSlot } | null>(null)
 
   useEffect(() => {
     if (!tournamentId) return
@@ -35,10 +36,35 @@ export function BracketPage() {
     return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
   }
 
-  const renderParticipant = (id: string, winner?: string) => {
+  const canArrangeFixture = canManuallyArrangeFirstRound(matches)
+
+  const handleDrop = async (targetMatch: Match, targetSlot: FirstRoundSlot) => {
+    if (!draggedSlot) return
+    const updated = swapFirstRoundParticipants(matches, draggedSlot.matchId, draggedSlot.slot, targetMatch.id, targetSlot)
+    setDraggedSlot(null)
+    if (!updated) return
+    await db.matches.bulkPut(updated)
+    setMatches(updated)
+  }
+
+  const renderParticipant = (id: string, winner?: string, match?: Match, slot?: FirstRoundSlot) => {
     const isWinner = winner === id && Boolean(winner)
+    const isDraggable = Boolean(match && slot && canArrangeFixture && isManuallyEditableFirstRoundMatch(match))
     return (
-      <div className={`flex items-center gap-2 rounded px-2 py-1 text-sm ${isWinner ? 'bg-green-50 font-semibold text-green-800' : 'text-gray-700'}`}>
+      <div
+        draggable={isDraggable}
+        onDragStart={() => {
+          if (match && slot) setDraggedSlot({ matchId: match.id, slot })
+        }}
+        onDragOver={(event) => {
+          if (isDraggable) event.preventDefault()
+        }}
+        onDrop={() => {
+          if (match && slot) handleDrop(match, slot)
+        }}
+        onDragEnd={() => setDraggedSlot(null)}
+        className={`flex items-center gap-2 rounded px-2 py-1 text-sm ${isWinner ? 'bg-green-50 font-semibold text-green-800' : 'text-gray-700'} ${isDraggable ? 'cursor-grab hover:bg-blue-50' : ''}`}
+      >
         <span className="h-3 w-3 rounded-full" style={{ backgroundColor: participantColor(id) }} />
         <span className="truncate">{participantName(id)}</span>
       </div>
@@ -69,9 +95,9 @@ export function BracketPage() {
                   .map((m) => (
                     <div key={m.id} className="card p-3">
                       <div className="mb-2 text-xs text-gray-500">{formatTime(m.scheduledAt)} · {m.courtName}</div>
-                      {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId) : renderPending()}
+                      {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId, m, 'home') : renderPending()}
                       <div className="my-1 text-center text-xs text-gray-400">vs</div>
-                      {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId) : renderPending()}
+                      {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId, m, 'away') : renderPending()}
                       {isMatchFinished(m) && (
                         <div className="mt-2 text-center font-mono text-sm font-semibold">
                           {countSetsWon(m.sets, 'home')} - {countSetsWon(m.sets, 'away')}
@@ -99,6 +125,7 @@ export function BracketPage() {
         Volver
       </Link>
       <h1 className="text-2xl font-bold text-gray-900">Cuadro del torneo</h1>
+      {canArrangeFixture && matches.some(isManuallyEditableFirstRoundMatch) && <p className="text-sm text-gray-600">Puedes arrastrar participantes entre partidos de la primera ronda antes de registrar resultados.</p>}
 
       {tournament?.format === 'groups-knockout' && groups.length > 0 && (
         <section className="space-y-4">
