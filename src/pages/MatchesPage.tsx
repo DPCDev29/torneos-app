@@ -46,6 +46,57 @@ export function MatchesPage() {
   const participantName = (id: string) => participants.find((p) => p.id === id)?.name || '—'
   const participantColor = (id: string) => participants.find((p) => p.id === id)?.color
 
+  const getMatchId = (match: Match) => {
+    const stagePrefix = match.stage === 'winners' ? 'W' : match.stage === 'losers' ? 'L' : 'F'
+    const allStageMatches = matches
+      .filter(m => m.stage === match.stage && !m.isBye)
+      .sort((a, b) => {
+        if (a.round !== b.round) return a.round - b.round
+        return a.position - b.position
+      })
+    const index = allStageMatches.findIndex(m => m.id === match.id)
+    return `${stagePrefix}${index + 1}`
+  }
+
+  const getMatchReference = (match: Match, slot: 'home' | 'away') => {
+    // Find matches that feed into this match
+    const sourceMatches = matches.filter(m => m.nextMatchId === match.id)
+    
+    let sourceMatch: Match | undefined
+    if (sourceMatches.length > 0) {
+      sourceMatch = sourceMatches.find(m => {
+        if (m.nextMatchSlot) {
+          return m.nextMatchSlot === slot
+        }
+        const inferredSlot = m.position % 2 === 0 ? 'home' : 'away'
+        return inferredSlot === slot
+      })
+    }
+    
+    if (sourceMatch) {
+      return `🏆 Ganador ${getMatchId(sourceMatch)}`
+    }
+    
+    // Check loser bracket
+    const loserSourceMatches = matches.filter(m => m.loserNextMatchId === match.id)
+    let loserSourceMatch: Match | undefined
+    if (loserSourceMatches.length > 0) {
+      loserSourceMatch = loserSourceMatches.find(m => {
+        if (m.loserNextMatchSlot) {
+          return m.loserNextMatchSlot === slot
+        }
+        const inferredSlot = m.position % 2 === 0 ? 'home' : 'away'
+        return inferredSlot === slot
+      })
+    }
+    
+    if (loserSourceMatch) {
+      return `💔 Perdedor ${getMatchId(loserSourceMatch)}`
+    }
+    
+    return null
+  }
+
   const addSet = (matchId: string) => {
     setMatchSets((prev) => ({
       ...prev,
@@ -279,23 +330,34 @@ export function MatchesPage() {
     const awayColor = participantColor(m.awayParticipantId)
     const sets = matchSets[m.id] || []
     const hasParticipants = Boolean(m.homeParticipantId && m.awayParticipantId)
+    const homeRef = !m.homeParticipantId ? getMatchReference(m, 'home') : null
+    const awayRef = !m.awayParticipantId ? getMatchReference(m, 'away') : null
     
     return (
       <div key={m.id} className="card space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
+              <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-700">{getMatchId(m)}</span>
               <span>📅 {formatDate(m.scheduledAt)}</span>
               <span className="text-blue-600">🏟️ {m.courtName}</span>
             </div>
             <div className="mt-1 flex items-center gap-2 text-sm font-medium">
               <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: homeColor }} />
-              <span className="flex-1">{participantName(m.homeParticipantId)}</span>
+              <span className="flex-1">
+                {m.homeParticipantId ? participantName(m.homeParticipantId) : (
+                  homeRef ? <span className="text-amber-600">{homeRef}</span> : '—'
+                )}
+              </span>
               <span className="text-gray-400">vs</span>
               <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: awayColor }} />
-              <span className="flex-1">{participantName(m.awayParticipantId)}</span>
+              <span className="flex-1">
+                {m.awayParticipantId ? participantName(m.awayParticipantId) : (
+                  awayRef ? <span className="text-amber-600">{awayRef}</span> : '—'
+                )}
+              </span>
             </div>
-            {!hasParticipants && (
+            {!hasParticipants && !homeRef && !awayRef && (
               <div className="mt-1 text-xs text-amber-600">⚠ Esperando participantes</div>
             )}
           </div>
