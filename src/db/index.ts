@@ -13,6 +13,7 @@ const columnNames: Record<string, string> = {
   matchDurationMinutes: 'match_duration_minutes',
   setsToWin: 'sets_to_win',
   includeGrandFinal: 'include_grand_final',
+  publicToken: 'public_token',
   createdAt: 'created_at',
   updatedAt: 'updated_at',
   groupId: 'group_id',

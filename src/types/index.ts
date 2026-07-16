@@ -11,6 +11,7 @@ export interface Tournament {
   matchDurationMinutes: number
   setsToWin: number
   includeGrandFinal?: boolean
+  publicToken?: string
   createdAt: string
   updatedAt: string
 }

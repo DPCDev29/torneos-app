@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Users, Swords, LayoutGrid, Trophy, Trash2, Edit, Calendar, MapPin, Clock } from 'lucide-react'
+import { Users, Swords, LayoutGrid, Trophy, Trash2, Edit, Calendar, MapPin, Clock, Share2, Copy, Check } from 'lucide-react'
 import { db } from '../db'
 import type { Tournament, Participant, Match, Group, Standing } from '../types'
 import { calculateStandingsForParticipantIds, regenerateTournamentSchedule } from '../utils/tournament'
@@ -13,6 +13,8 @@ export function TournamentDetailPage() {
   const [matches, setMatches] = useState<Match[]>([])
   const [groups, setGroups] = useState<Group[]>([])
   const [standings, setStandings] = useState<Standing[]>([])
+  const [showPublicLink, setShowPublicLink] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -71,6 +73,31 @@ export function TournamentDetailPage() {
     navigate('/')
   }
 
+  const handleGeneratePublicLink = async () => {
+    if (!id) return
+    const token = crypto.randomUUID()
+    await db.tournaments.update(id, { publicToken: token })
+    const updated = await db.tournaments.get(id)
+    setTournament(updated || null)
+    setShowPublicLink(true)
+  }
+
+  const handleRevokePublicLink = async () => {
+    if (!id || !confirm('¿Revocar el link público? Los links compartidos dejarán de funcionar.')) return
+    await db.tournaments.update(id, { publicToken: undefined })
+    const updated = await db.tournaments.get(id)
+    setTournament(updated || null)
+    setShowPublicLink(false)
+  }
+
+  const handleCopyLink = () => {
+    if (!tournament?.publicToken) return
+    const link = `${window.location.origin}${window.location.pathname}#/public/${id}?token=${tournament.publicToken}`
+    navigator.clipboard.writeText(link)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   if (!tournament) {
     return <div className="text-center text-gray-600">Cargando...</div>
   }
@@ -90,12 +117,45 @@ export function TournamentDetailPage() {
             <Edit className="h-4 w-4" />
             Editar
           </Link>
+          {tournament.publicToken ? (
+            <button onClick={() => setShowPublicLink(!showPublicLink)} className="btn-secondary gap-1">
+              <Share2 className="h-4 w-4" />
+              Link público
+            </button>
+          ) : (
+            <button onClick={handleGeneratePublicLink} className="btn-secondary gap-1">
+              <Share2 className="h-4 w-4" />
+              Compartir
+            </button>
+          )}
           <button onClick={handleDelete} className="btn-danger gap-1">
             <Trash2 className="h-4 w-4" />
             Eliminar
           </button>
         </div>
       </div>
+
+      {showPublicLink && tournament.publicToken && (
+        <div className="card space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-800">Link público</h2>
+            <button onClick={handleRevokePublicLink} className="text-sm text-red-600 hover:text-red-800">Revocar</button>
+          </div>
+          <p className="text-sm text-gray-600">Cualquier persona con este link puede ver el fixture sin iniciar sesión.</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={`${window.location.origin}${window.location.pathname}#/public/${id}?token=${tournament.publicToken}`}
+              className="input flex-1 text-sm"
+            />
+            <button onClick={handleCopyLink} className="btn-primary gap-1">
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="card grid gap-3 text-sm text-gray-600 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex items-center gap-2">

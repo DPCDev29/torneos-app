@@ -9,12 +9,16 @@ import { Layout } from './components/Layout'
 import { AuthProvider, useAuth } from './supabase/AuthProvider'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { PublicBracketPage } from './pages/PublicBracketPage'
 
 function AppContent() {
   const { session, loading } = useAuth()
   const { pathname } = useLocation()
   if (loading) return <main className="flex min-h-screen items-center justify-center text-gray-600">Cargando...</main>
-  if (!session) return pathname === '/register' ? <RegisterPage /> : <LoginPage />
+  if (!session) {
+    if (pathname.startsWith('/public/')) return <PublicBracketPage />
+    return pathname === '/register' ? <RegisterPage /> : <LoginPage />
+  }
 
   return (
     <Layout>
