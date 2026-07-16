@@ -133,6 +133,13 @@ export function MatchesPage() {
     setMatches(updated)
   }
 
+  const handleCourtChange = async (match: Match, courtName: string) => {
+    if (!courtName) return
+    await db.matches.update(match.id, { courtName })
+    const updated = await db.matches.where('tournamentId').equals(match.tournamentId).toArray()
+    setMatches(updated)
+  }
+
   const editableFirstRoundMatches = matches
     .filter(isManuallyEditableFirstRoundMatch)
     .sort((a, b) => a.position - b.position)
@@ -279,13 +286,22 @@ export function MatchesPage() {
               <span className="flex-1">{participantName(m.awayParticipantId)}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="datetime-local"
               value={toDateTimeLocal(m.scheduledAt)}
               onChange={(e) => handleDateChange(m, e.target.value)}
               className="input text-xs"
             />
+            <select
+              value={m.courtName}
+              onChange={(e) => handleCourtChange(m, e.target.value)}
+              className="input text-xs"
+            >
+              {tournament?.courtNames.map((court) => (
+                <option key={court} value={court}>{court}</option>
+              ))}
+            </select>
             <button type="button" onClick={() => addSet(m.id)} className="btn-secondary text-xs">
               + Set
             </button>
