@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { Trophy } from 'lucide-react'
 import { createPublicClient } from '../supabase/publicClient'
-import type { Tournament, Participant, Match, Group } from '../types'
-import { calculateStandings, countSetsWon, isMatchFinished } from '../utils/tournament'
+import type { Tournament, Participant, Match } from '../types'
+import { countSetsWon, isMatchFinished } from '../utils/tournament'
 
 export function PublicBracketPage() {
   const { id: tournamentId } = useParams<{ id: string }>()
@@ -12,7 +12,6 @@ export function PublicBracketPage() {
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [participants, setParticipants] = useState<Participant[]>([])
   const [matches, setMatches] = useState<Match[]>([])
-  const [groups, setGroups] = useState<Group[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -25,8 +24,7 @@ export function PublicBracketPage() {
       client.from('tournaments').select().eq('id', tournamentId).maybeSingle(),
       client.from('participants').select().eq('tournament_id', tournamentId),
       client.from('matches').select().eq('tournament_id', tournamentId),
-      client.from('groups').select().eq('tournament_id', tournamentId),
-    ]).then(([tRes, pRes, mRes, gRes]) => {
+    ]).then(([tRes, pRes, mRes]) => {
       if (tRes.error || !tRes.data) {
         setError('Torneo no encontrado o link revocado.')
         return
@@ -34,7 +32,6 @@ export function PublicBracketPage() {
       setTournament(tRes.data as unknown as Tournament)
       setParticipants((pRes.data || []) as unknown as Participant[])
       setMatches((mRes.data || []) as unknown as Match[])
-      setGroups((gRes.data || []) as unknown as Group[])
     })
   }, [tournamentId, token])
 
@@ -121,49 +118,14 @@ export function PublicBracketPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="mx-auto max-w-5xl space-y-4">
-        <div className="flex items-center gap-3">
-          <Trophy className="h-8 w-8 text-blue-700" />
-          <h1 className="text-2xl font-bold text-gray-900">{tournament.name}</h1>
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Trophy className="h-10 w-10 text-blue-700" />
+            <h1 className="text-3xl font-bold text-gray-900">{tournament.name}</h1>
+          </div>
+          <p className="text-gray-600">{tournament.venue} · {new Date(tournament.startDate).toLocaleDateString('es-ES')}</p>
         </div>
-        <p className="text-sm text-gray-600">{tournament.venue} · {new Date(tournament.startDate).toLocaleDateString('es-ES')}</p>
-
-        {tournament.format === 'groups-knockout' && groups.length > 0 && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-800">Fase de grupos</h2>
-            <div className="grid gap-4 lg:grid-cols-2">
-              {groups.map((g) => {
-                const groupMatches = matches.filter((m) => m.groupId === g.id && !m.isBye)
-                const standings = calculateStandings(g, matches)
-                return (
-                  <div key={g.id} className="card space-y-3">
-                    <h3 className="font-semibold text-gray-900">{g.name}</h3>
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b text-gray-500">
-                          <th className="py-1">Equipo</th>
-                          <th className="py-1 text-center">PJ</th>
-                          <th className="py-1 text-center">Pts</th>
-                          <th className="py-1 text-center">DS</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {standings.map((s) => (
-                          <tr key={s.participantId} className="border-b border-gray-100">
-                            <td className="py-1">{renderParticipant(s.participantId)}</td>
-                            <td className="py-1 text-center">{s.played}</td>
-                            <td className="py-1 text-center font-semibold">{s.points}</td>
-                            <td className="py-1 text-center">{s.setDifference}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        )}
 
         {renderBracket('knockout', 'Eliminatoria')}
         {renderBracket('winners', 'Bracket de ganadores')}
