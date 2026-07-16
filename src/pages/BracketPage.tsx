@@ -98,7 +98,10 @@ export function BracketPage() {
                   .sort((a, b) => a.position - b.position)
                   .map((m) => (
                     <div key={m.id} className="card p-3">
-                      <div className="mb-2 text-xs text-gray-500">{formatTime(m.scheduledAt)} · {m.courtName}</div>
+                      <div className="mb-2 flex flex-col gap-1">
+                        <div className="text-sm font-bold text-gray-700">📅 {formatTime(m.scheduledAt)}</div>
+                        <div className="text-sm font-bold text-blue-600">🏟️ {m.courtName}</div>
+                      </div>
                       {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId, m, 'home') : renderPending()}
                       <div className="my-1 text-center text-xs text-gray-400">vs</div>
                       {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId, m, 'away') : renderPending()}

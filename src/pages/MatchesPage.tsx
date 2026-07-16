@@ -284,7 +284,10 @@ export function MatchesPage() {
       <div key={m.id} className="card space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">
-            <div className="text-xs text-gray-500">{formatDate(m.scheduledAt)} · {m.courtName}</div>
+            <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
+              <span>📅 {formatDate(m.scheduledAt)}</span>
+              <span className="text-blue-600">🏟️ {m.courtName}</span>
+            </div>
             <div className="mt-1 flex items-center gap-2 text-sm font-medium">
               <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: homeColor }} />
               <span className="flex-1">{participantName(m.homeParticipantId)}</span>
