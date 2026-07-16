@@ -245,12 +245,29 @@ export function generateKnockoutMatches(
     matches.push(...roundMatches)
   }
 
-  // Conectar llaves: cada partido de ronda r alimenta al partido floor(i/2) de ronda r+1
+  // Conectar llaves: pares con pares, impares con impares
+  // Ej: W1(pos 0) y W3(pos 2) → partido 0 siguiente ronda (home y away)
+  //     W2(pos 1) y W4(pos 3) → partido 1 siguiente ronda (home y away)
   for (let r = 0; r < matchesByRound.length - 1; r++) {
     const current = matchesByRound[r]
     const next = matchesByRound[r + 1]
-    current.forEach((m, i) => {
-      m.nextMatchId = next[Math.floor(i / 2)].id
+    
+    // Separar en pares e impares
+    const evens = current.filter((_, i) => i % 2 === 0)  // 0, 2, 4, 6...
+    const odds = current.filter((_, i) => i % 2 === 1)   // 1, 3, 5, 7...
+    
+    // Emparejar pares entre sí
+    evens.forEach((m, i) => {
+      const nextMatchIndex = Math.floor(i / 2)
+      m.nextMatchId = next[nextMatchIndex].id
+      m.nextMatchSlot = i % 2 === 0 ? 'home' : 'away'
+    })
+    
+    // Emparejar impares entre sí
+    odds.forEach((m, i) => {
+      const nextMatchIndex = Math.floor(evens.length / 2) + Math.floor(i / 2)
+      m.nextMatchId = next[nextMatchIndex].id
+      m.nextMatchSlot = i % 2 === 0 ? 'home' : 'away'
     })
   }
 
