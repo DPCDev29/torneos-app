@@ -21,7 +21,7 @@ export function PublicBracketPage() {
     }
     const client = createPublicClient(token)
     Promise.all([
-      client.from('tournaments').select().eq('id', tournamentId).maybeSingle(),
+      client.from('tournaments').select().eq('id', tournamentId).eq('public_token', token).maybeSingle(),
       client.from('participants').select().eq('tournament_id', tournamentId),
       client.from('matches').select().eq('tournament_id', tournamentId),
     ]).then(([tRes, pRes, mRes]) => {
