@@ -23,7 +23,12 @@ function AppContent() {
   if (loading) return <main className="flex min-h-screen items-center justify-center text-gray-600">Cargando...</main>
   
   if (!session) {
-    return pathname === '/register' ? <RegisterPage /> : <LoginPage />
+    return (
+      <Routes>
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="*" element={<LoginPage />} />
+      </Routes>
+    )
   }
 
   return (
