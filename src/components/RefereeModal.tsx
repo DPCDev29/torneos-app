@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import type { Match, MatchSet, Participant } from '../types'
 import { isSetFinished } from '../utils/tournament'
@@ -9,13 +9,39 @@ interface Props {
   setsToWin: number
   onClose: () => void
   onSave: (match: Match, sets: MatchSet[]) => void
+  onLiveUpdate?: (match: Match, sets: MatchSet[]) => void // Nueva prop para actualizaciones en vivo
 }
 
-export function RefereeModal({ match, participants, setsToWin, onClose, onSave }: Props) {
+export function RefereeModal({ match, participants, setsToWin, onClose, onSave, onLiveUpdate }: Props) {
   const [sets, setSets] = useState<MatchSet[]>(() => {
     if (match.sets && match.sets.length > 0) return match.sets.map((s) => ({ ...s }))
     return [{ home: 0, away: 0 }]
   })
+
+  // Debounce timer para evitar demasiadas actualizaciones
+  const updateTimerRef = useRef<number | null>(null)
+
+  // Efecto para guardar automáticamente cada cambio de punto (con debounce de 500ms)
+  useEffect(() => {
+    if (!onLiveUpdate) return
+
+    // Limpiar timer anterior
+    if (updateTimerRef.current) {
+      clearTimeout(updateTimerRef.current)
+    }
+
+    // Programar actualización después de 500ms de inactividad
+    updateTimerRef.current = setTimeout(() => {
+      onLiveUpdate(match, sets)
+    }, 500)
+
+    // Cleanup
+    return () => {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current)
+      }
+    }
+  }, [sets, match, onLiveUpdate])
 
   const homeName = participants.find((p) => p.id === match.homeParticipantId)?.name || 'Local'
   const awayName = participants.find((p) => p.id === match.awayParticipantId)?.name || 'Visitante'

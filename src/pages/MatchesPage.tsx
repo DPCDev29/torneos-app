@@ -153,6 +153,19 @@ export function MatchesPage() {
     setMatchSets((prev) => ({ ...prev, [match.id]: sets.map((s) => ({ ...s })) }))
   }
 
+  // Handler para actualizaciones en vivo (punto por punto)
+  const handleLiveUpdate = async (match: Match, sets: MatchSet[]) => {
+    if (!match.homeParticipantId || !match.awayParticipantId || sets.length === 0) return
+
+    // Solo actualizar los sets, sin calcular ganador ni avanzar bracket
+    await db.matches.update(match.id, {
+      sets,
+    })
+
+    // Actualizar estado local
+    setMatchSets((prev) => ({ ...prev, [match.id]: sets.map((s) => ({ ...s })) }))
+  }
+
   const saveMatch = async (match: Match) => {
     const sets = matchSets[match.id] || []
     await handleSaveSets(match, sets)
@@ -320,6 +333,7 @@ export function MatchesPage() {
           setsToWin={tournament.setsToWin}
           onClose={() => setRefereeMatch(null)}
           onSave={handleSaveSets}
+          onLiveUpdate={handleLiveUpdate}
         />
       )}
     </div>
