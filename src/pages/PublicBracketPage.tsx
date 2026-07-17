@@ -18,18 +18,24 @@ export function PublicBracketPage() {
   const [matches, setMatches] = useState<Match[]>([])
   const [error, setError] = useState('')
 
+  // Transform snake_case to camelCase helper
+  const transformToCamel = (obj: any): any => {
+    if (!obj) return obj
+    const result: any = {}
+    Object.keys(obj).forEach(key => {
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+      result[camelKey] = obj[key]
+    })
+    return result
+  }
+
   useEffect(() => {
-    console.log('PublicBracketPage useEffect triggered')
-    console.log('tournamentId:', tournamentId)
-    console.log('token:', token)
-    
     if (!tournamentId || !token) {
-      console.log('Missing tournamentId or token')
       setError('Link inválido.')
       return
     }
+    
     const client = createPublicClient()
-    console.log('Client created:', client)
     
     const loadData = async () => {
       try {
@@ -39,8 +45,6 @@ export function PublicBracketPage() {
           .eq('id', tournamentId)
           .eq('public_token', token)
           .maybeSingle()
-        
-        console.log('Tournament query result:', tRes)
         
         if (tRes.error) {
           console.error('Tournament query error:', tRes.error)
@@ -53,17 +57,6 @@ export function PublicBracketPage() {
           return
         }
         
-        // Transform snake_case to camelCase
-        const transformToCamel = (obj: any): any => {
-          if (!obj) return obj
-          const result: any = {}
-          Object.keys(obj).forEach(key => {
-            const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
-            result[camelKey] = obj[key]
-          })
-          return result
-        }
-        
         setTournament(transformToCamel(tRes.data) as Tournament)
         
         // Load related data
@@ -71,9 +64,6 @@ export function PublicBracketPage() {
           client.from('participants').select().eq('tournament_id', tournamentId),
           client.from('matches').select().eq('tournament_id', tournamentId),
         ])
-        
-        console.log('Participants:', pRes)
-        console.log('Matches:', mRes)
         
         setParticipants((pRes.data || []).map(transformToCamel) as Participant[])
         setMatches((mRes.data || []).map(transformToCamel) as Match[])
@@ -86,12 +76,63 @@ export function PublicBracketPage() {
     loadData()
   }, [tournamentId, token])
 
+  // Realtime subscription for live score updates
+  useEffect(() => {
+    if (!tournamentId || !token) return
+
+    const client = createPublicClient()
+    
+    // Subscribe to match updates for this tournament
+    const channel = client
+      .channel(`public-matches-${tournamentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'matches',
+          filter: `tournament_id=eq.${tournamentId}`
+        },
+        (payload) => {
+          console.log('🔴 Live update received:', payload)
+          
+          // Update the specific match in state
+          if (payload.new) {
+            const updatedMatch = transformToCamel(payload.new) as Match
+            setMatches(prev => 
+              prev.map(m => m.id === updatedMatch.id ? updatedMatch : m)
+            )
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status)
+      })
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('Unsubscribing from realtime channel')
+      channel.unsubscribe()
+    }
+  }, [tournamentId, token])
+
   const participantName = (id: string) => participants.find((p) => p.id === id)?.name || '—'
   const participantColor = (id: string) => participants.find((p) => p.id === id)?.color
 
   const formatTime = (iso: string) => {
     if (!iso) return ''
     return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Check if match is currently in progress (has participants but no winner, and has sets being recorded)
+  const isMatchLive = (match: Match) => {
+    return Boolean(
+      match.homeParticipantId && 
+      match.awayParticipantId && 
+      !match.winnerParticipantId &&
+      match.sets && 
+      match.sets.length > 0
+    )
   }
 
   const getMatchId = (match: Match) => {
@@ -185,8 +226,15 @@ export function PublicBracketPage() {
                   .sort((a, b) => a.position - b.position)
                   .map((m) => (
                     <div key={m.id} className="card relative p-3">
-                      <div className="absolute right-2 top-2 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-700">
-                        {getMatchId(m)}
+                      <div className="absolute right-2 top-2 flex gap-2">
+                        {isMatchLive(m) && (
+                          <span className="animate-pulse rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600">
+                            🔴 EN VIVO
+                          </span>
+                        )}
+                        <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-700">
+                          {getMatchId(m)}
+                        </span>
                       </div>
                       <div className="mb-2 flex flex-col gap-1">
                         <div className="text-sm font-bold text-gray-700">📅 {formatTime(m.scheduledAt)}</div>
@@ -195,11 +243,11 @@ export function PublicBracketPage() {
                       {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId) : renderPending(m, 'home')}
                       <div className="my-1 text-center text-xs text-gray-400">vs</div>
                       {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId) : renderPending(m, 'away')}
-                      {isMatchFinished(m) && (
+                      {(isMatchFinished(m) || isMatchLive(m)) && m.sets && m.sets.length > 0 && (
                         <div className="mt-2 text-center font-mono text-sm font-semibold">
                           {countSetsWon(m.sets, 'home')} - {countSetsWon(m.sets, 'away')}
                           <span className="block text-xs font-normal text-gray-500">
-                            {m.sets?.map((s, i) => (
+                            {m.sets.map((s, i) => (
                               <span key={i} className="ml-1">{s.home}:{s.away}</span>
                             ))}
                           </span>

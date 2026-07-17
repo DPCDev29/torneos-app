@@ -40,6 +40,17 @@ export function BracketPage() {
     return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
   }
 
+  // Check if match is currently in progress (has participants but no winner, and has sets being recorded)
+  const isMatchLive = (match: Match) => {
+    return Boolean(
+      match.homeParticipantId && 
+      match.awayParticipantId && 
+      !match.winnerParticipantId &&
+      match.sets && 
+      match.sets.length > 0
+    )
+  }
+
   const getMatchId = (match: Match) => {
     const stagePrefix = match.stage === 'winners' ? 'W' : match.stage === 'losers' ? 'L' : 'F'
     const allStageMatches = matches
@@ -156,8 +167,15 @@ export function BracketPage() {
                   .sort((a, b) => a.position - b.position)
                   .map((m) => (
                     <div key={m.id} className="card relative p-3">
-                      <div className="absolute right-2 top-2 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-700">
-                        {getMatchId(m)}
+                      <div className="absolute right-2 top-2 flex gap-2">
+                        {isMatchLive(m) && (
+                          <span className="animate-pulse rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600">
+                            🔴 EN VIVO
+                          </span>
+                        )}
+                        <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-700">
+                          {getMatchId(m)}
+                        </span>
                       </div>
                       <div className="mb-2 flex flex-col gap-1">
                         <div className="text-sm font-bold text-gray-700">📅 {formatTime(m.scheduledAt)}</div>
@@ -166,11 +184,11 @@ export function BracketPage() {
                       {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId, m, 'home') : renderPending(m, 'home')}
                       <div className="my-1 text-center text-xs text-gray-400">vs</div>
                       {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId, m, 'away') : renderPending(m, 'away')}
-                      {isMatchFinished(m) && (
+                      {(isMatchFinished(m) || isMatchLive(m)) && m.sets && m.sets.length > 0 && (
                         <div className="mt-2 text-center font-mono text-sm font-semibold">
                           {countSetsWon(m.sets, 'home')} - {countSetsWon(m.sets, 'away')}
                           <span className="block text-xs font-normal text-gray-500">
-                            {m.sets?.map((s, i) => (
+                            {m.sets.map((s, i) => (
                               <span key={i} className="ml-1">{s.home}:{s.away}</span>
                             ))}
                           </span>
