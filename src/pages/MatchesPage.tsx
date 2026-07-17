@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Save, UserCheck } from 'lucide-react'
 import { db } from '../db'
@@ -13,6 +13,9 @@ export function MatchesPage() {
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [matchSets, setMatchSets] = useState<Record<string, MatchSet[]>>({})
   const [refereeMatch, setRefereeMatch] = useState<Match | null>(null)
+  
+  // Timers para auto-guardado con debounce por cada partido
+  const autoSaveTimersRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (!tournamentId) return
@@ -42,6 +45,13 @@ export function MatchesPage() {
     loadMatches()
     return db.subscribeToTournament(tournamentId, loadMatches)
   }, [tournamentId])
+
+  // Limpiar timers al desmontar
+  useEffect(() => {
+    return () => {
+      Object.values(autoSaveTimersRef.current).forEach(timer => clearTimeout(timer))
+    }
+  }, [])
 
   const participantName = (id: string) => participants.find((p) => p.id === id)?.name || '—'
   const participantColor = (id: string) => participants.find((p) => p.id === id)?.color
@@ -115,10 +125,25 @@ export function MatchesPage() {
   const updateSet = (matchId: string, index: number, side: 'home' | 'away', value: string) => {
     const num = Number(value)
     if (Number.isNaN(num) || num < 0) return
+    
     setMatchSets((prev) => {
       const current = [...(prev[matchId] || [])]
       current[index] = { ...current[index], [side]: num }
-      return { ...prev, [matchId]: current }
+      const newSets = { ...prev, [matchId]: current }
+      
+      // Programar auto-guardado con debounce de 1 segundo
+      if (autoSaveTimersRef.current[matchId]) {
+        clearTimeout(autoSaveTimersRef.current[matchId])
+      }
+      
+      autoSaveTimersRef.current[matchId] = setTimeout(() => {
+        const match = matches.find(m => m.id === matchId)
+        if (match) {
+          handleLiveUpdate(match, current)
+        }
+      }, 1000)
+      
+      return newSets
     })
   }
 
