@@ -52,7 +52,7 @@ export interface Match {
   homeParticipantId: string
   awayParticipantId: string
   sets?: MatchSet[]
-  winnerParticipantId?: string
+  winnerParticipantId?: string | null
   nextMatchId?: string
   nextMatchSlot?: 'home' | 'away'
   loserNextMatchId?: string

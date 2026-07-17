@@ -157,9 +157,8 @@ export function MatchesPage() {
     const matchToUpdate = await db.matches.get(match.id)
     if (matchToUpdate) {
       matchToUpdate.sets = sets
-      // Siempre establecer winnerParticipantId (winner o undefined)
-      // Esto asegura que se limpie cuando no hay ganador
-      matchToUpdate.winnerParticipantId = winner
+      // Usar null explícitamente cuando no hay ganador (undefined no se persiste en Supabase)
+      matchToUpdate.winnerParticipantId = winner || null
       await db.matches.put(matchToUpdate)
     }
 

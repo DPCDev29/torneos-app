@@ -666,7 +666,7 @@ export async function regenerateTournamentSchedule(tournamentId: string): Promis
 
   // Preservar resultados existentes de grupos
   const existingMatches = await db.matches.where('tournamentId').equals(tournamentId).toArray()
-  const resultsByPair = new Map<string, { sets: MatchSet[]; winnerParticipantId?: string }>()
+  const resultsByPair = new Map<string, { sets: MatchSet[]; winnerParticipantId?: string | null }>()
   existingMatches.forEach((m) => {
     if (m.stage === 'group' && isMatchFinished(m)) {
       resultsByPair.set(`${m.homeParticipantId}-${m.awayParticipantId}`, {
