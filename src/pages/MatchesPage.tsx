@@ -153,22 +153,17 @@ export function MatchesPage() {
     const winner = getMatchWinner({ ...match, sets }, tournament?.setsToWin)
     const hadWinner = Boolean(match.winnerParticipantId)
 
-    // Actualizar el partido - si no hay ganador, eliminar el campo explícitamente
-    const updateData: Partial<Match> = { sets }
-    if (winner) {
-      updateData.winnerParticipantId = winner
-    } else {
-      // Eliminar el campo winnerParticipantId si no hay ganador
-      const matchToUpdate = await db.matches.get(match.id)
-      if (matchToUpdate) {
+    // Obtener el partido actual y actualizarlo
+    const matchToUpdate = await db.matches.get(match.id)
+    if (matchToUpdate) {
+      matchToUpdate.sets = sets
+      if (winner) {
+        matchToUpdate.winnerParticipantId = winner
+      } else {
+        // Eliminar el campo winnerParticipantId si no hay ganador
         delete matchToUpdate.winnerParticipantId
-        matchToUpdate.sets = sets
-        await db.matches.put(matchToUpdate)
       }
-    }
-    
-    if (winner) {
-      await db.matches.update(match.id, updateData)
+      await db.matches.put(matchToUpdate)
     }
 
     if (match.stage === 'knockout' || match.stage === 'winners' || match.stage === 'losers' || match.stage === 'final') {
