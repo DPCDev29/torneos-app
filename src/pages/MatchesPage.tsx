@@ -150,7 +150,7 @@ export function MatchesPage() {
   const handleSaveSets = async (match: Match, sets: MatchSet[]) => {
     if (!match.homeParticipantId || !match.awayParticipantId || sets.length === 0 || sets.some((s) => Number.isNaN(s.home) || Number.isNaN(s.away))) return
 
-    const winner = getMatchWinner({ ...match, sets })
+    const winner = getMatchWinner({ ...match, sets }, tournament?.setsToWin)
 
     await db.matches.update(match.id, {
       sets,
@@ -182,13 +182,11 @@ export function MatchesPage() {
   const handleLiveUpdate = async (match: Match, sets: MatchSet[]) => {
     if (!match.homeParticipantId || !match.awayParticipantId || sets.length === 0) return
 
-    // Verificar si hay un ganador real (para evitar marcar ganador prematuro)
-    const winner = getMatchWinner({ ...match, sets })
-
-    // Solo actualizar los sets y limpiar ganador si no hay uno válido
+    // Durante actualizaciones en vivo, NO calcular ganador
+    // Solo actualizar los sets sin modificar winnerParticipantId
+    // El ganador se calcula solo al hacer click en "Guardar" (handleSaveSets)
     await db.matches.update(match.id, {
       sets,
-      winnerParticipantId: winner || undefined,
     })
 
     // Actualizar estado local

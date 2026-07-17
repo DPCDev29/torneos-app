@@ -60,9 +60,18 @@ export function getSetWinner(set: MatchSet): 'home' | 'away' | null {
   return set.home > set.away ? 'home' : 'away'
 }
 
-export function getMatchWinner(match: Match): string | undefined {
+export function getMatchWinner(match: Match, setsToWin?: number): string | undefined {
   const home = countSetsWon(match.sets, 'home')
   const away = countSetsWon(match.sets, 'away')
+  
+  // Si se proporciona setsToWin, verificar que se alcanzó ese número
+  if (setsToWin !== undefined) {
+    if (home >= setsToWin) return match.homeParticipantId
+    if (away >= setsToWin) return match.awayParticipantId
+    return undefined
+  }
+  
+  // Comportamiento legacy: retornar quien tenga más sets (para compatibilidad)
   if (home > away) return match.homeParticipantId
   if (away > home) return match.awayParticipantId
   return undefined
