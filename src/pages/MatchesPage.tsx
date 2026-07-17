@@ -157,9 +157,13 @@ export function MatchesPage() {
   const handleLiveUpdate = async (match: Match, sets: MatchSet[]) => {
     if (!match.homeParticipantId || !match.awayParticipantId || sets.length === 0) return
 
-    // Solo actualizar los sets, sin calcular ganador ni avanzar bracket
+    // Verificar si hay un ganador real (para evitar marcar ganador prematuro)
+    const winner = getMatchWinner({ ...match, sets })
+
+    // Solo actualizar los sets y limpiar ganador si no hay uno válido
     await db.matches.update(match.id, {
       sets,
+      winnerParticipantId: winner || undefined,
     })
 
     // Actualizar estado local
