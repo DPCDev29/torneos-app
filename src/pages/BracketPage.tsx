@@ -37,7 +37,10 @@ export function BracketPage() {
 
   const formatTime = (iso: string) => {
     if (!iso) return ''
-    return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    const date = new Date(iso)
+    const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
+    const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    return `${dateStr} ${timeStr}`
   }
 
   // Check if match is currently in progress (has participants but no winner, and has at least 1 point)
