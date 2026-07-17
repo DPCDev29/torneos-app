@@ -150,7 +150,7 @@ export function PublicBracketPage() {
     return `${stagePrefix}${index + 1}`
   }
 
-  const renderParticipant = (id: string, winner?: string) => {
+  const renderParticipant = (id: string, winner?: string | null) => {
     const isWinner = winner === id && Boolean(winner)
     return (
       <div className={`flex items-center gap-2 rounded px-2 py-1 text-sm ${isWinner ? 'bg-green-50 font-semibold text-green-800' : 'text-gray-700'}`}>
@@ -246,7 +246,7 @@ export function PublicBracketPage() {
                       {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId) : renderPending(m, 'home')}
                       <div className="my-1 text-center text-xs text-gray-400">vs</div>
                       {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId) : renderPending(m, 'away')}
-                      {(isMatchFinished(m) || isMatchLive(m)) && m.sets && m.sets.length > 0 && (
+                      {((isMatchFinished(m) && m.winnerParticipantId) || isMatchLive(m)) && m.sets && m.sets.length > 0 && (
                         <div className="mt-2 text-center font-mono text-sm font-semibold">
                           {countSetsWon(m.sets, 'home')} - {countSetsWon(m.sets, 'away')}
                           <span className="block text-xs font-normal text-gray-500">

@@ -77,7 +77,7 @@ export function BracketPage() {
     setMatches(updated)
   }
 
-  const renderParticipant = (id: string, winner?: string, match?: Match, slot?: FirstRoundSlot) => {
+  const renderParticipant = (id: string, winner?: string | null, match?: Match, slot?: FirstRoundSlot) => {
     const isWinner = winner === id && Boolean(winner)
     const isDraggable = Boolean(match && slot && canArrangeFixture && isManuallyEditableFirstRoundMatch(match))
     return (
@@ -187,12 +187,14 @@ export function BracketPage() {
                       {m.homeParticipantId ? renderParticipant(m.homeParticipantId, m.winnerParticipantId, m, 'home') : renderPending(m, 'home')}
                       <div className="my-1 text-center text-xs text-gray-400">vs</div>
                       {m.awayParticipantId ? renderParticipant(m.awayParticipantId, m.winnerParticipantId, m, 'away') : renderPending(m, 'away')}
-                      {(isMatchFinished(m) || isMatchLive(m)) && m.sets && m.sets.length > 0 && (
+                      {((isMatchFinished(m) && m.winnerParticipantId) || isMatchLive(m)) && m.sets && m.sets.length > 0 && (
                         <div className="mt-2 text-center font-mono text-sm font-semibold">
                           {countSetsWon(m.sets, 'home')} - {countSetsWon(m.sets, 'away')}
                           <span className="block text-xs font-normal text-gray-500">
                             {m.sets.map((s, i) => (
-                              <span key={i} className="ml-1">{s.home}:{s.away}</span>
+                              <span key={i} className="ml-1">
+                                {s.home}:{s.away}
+                              </span>
                             ))}
                           </span>
                         </div>
