@@ -45,6 +45,9 @@ export function swapFirstRoundParticipants(
 export function countSetsWon(sets: MatchSet[] | undefined, side: 'home' | 'away'): number {
   if (!sets) return 0
   return sets.reduce((acc, s) => {
+    // Solo contar sets que estén completamente terminados
+    if (!isSetFinished(s)) return acc
+    
     if (side === 'home' && s.home > s.away) return acc + 1
     if (side === 'away' && s.away > s.home) return acc + 1
     return acc
