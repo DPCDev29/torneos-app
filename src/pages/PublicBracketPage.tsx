@@ -124,15 +124,18 @@ export function PublicBracketPage() {
     return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
   }
 
-  // Check if match is currently in progress (has participants but no winner, and has sets being recorded)
+  // Check if match is currently in progress (has participants but no winner, and has at least 1 point)
   const isMatchLive = (match: Match) => {
-    return Boolean(
-      match.homeParticipantId && 
-      match.awayParticipantId && 
-      !match.winnerParticipantId &&
-      match.sets && 
-      match.sets.length > 0
-    )
+    if (!match.homeParticipantId || !match.awayParticipantId || match.winnerParticipantId) {
+      return false
+    }
+    
+    // Verificar si hay al menos 1 punto en algún set
+    if (match.sets && match.sets.length > 0) {
+      return match.sets.some(s => s.home > 0 || s.away > 0)
+    }
+    
+    return false
   }
 
   const getMatchId = (match: Match) => {
