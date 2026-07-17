@@ -157,12 +157,9 @@ export function MatchesPage() {
     const matchToUpdate = await db.matches.get(match.id)
     if (matchToUpdate) {
       matchToUpdate.sets = sets
-      if (winner) {
-        matchToUpdate.winnerParticipantId = winner
-      } else {
-        // Eliminar el campo winnerParticipantId si no hay ganador
-        delete matchToUpdate.winnerParticipantId
-      }
+      // Siempre establecer winnerParticipantId (winner o undefined)
+      // Esto asegura que se limpie cuando no hay ganador
+      matchToUpdate.winnerParticipantId = winner
       await db.matches.put(matchToUpdate)
     }
 
