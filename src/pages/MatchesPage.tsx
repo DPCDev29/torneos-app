@@ -151,18 +151,53 @@ export function MatchesPage() {
     if (!match.homeParticipantId || !match.awayParticipantId || sets.length === 0 || sets.some((s) => Number.isNaN(s.home) || Number.isNaN(s.away))) return
 
     const winner = getMatchWinner({ ...match, sets }, tournament?.setsToWin)
+    const hadWinner = Boolean(match.winnerParticipantId)
 
     await db.matches.update(match.id, {
       sets,
       winnerParticipantId: winner,
     })
 
-    if ((match.stage === 'knockout' || match.stage === 'winners' || match.stage === 'losers' || match.stage === 'final') && winner) {
+    if (match.stage === 'knockout' || match.stage === 'winners' || match.stage === 'losers' || match.stage === 'final') {
       const all = await db.matches.where('tournamentId').equals(match.tournamentId).toArray()
-      const completedMatch = { ...match, winnerParticipantId: winner }
-      advanceWinner(completedMatch, all)
-      if (match.stage === 'winners') advanceLoser(completedMatch, all)
-      resolveBracketByes(all)
+      
+      if (winner) {
+        // Hay ganador: avanzar en el bracket
+        const completedMatch = { ...match, winnerParticipantId: winner }
+        advanceWinner(completedMatch, all)
+        if (match.stage === 'winners') advanceLoser(completedMatch, all)
+        resolveBracketByes(all)
+      } else if (hadWinner) {
+        // Ya no hay ganador (se revirtió el resultado): limpiar partidos siguientes
+        // Limpiar ganador del partido siguiente
+        if (match.nextMatchId) {
+          const nextMatch = all.find(m => m.id === match.nextMatchId)
+          if (nextMatch) {
+            const slot = match.nextMatchSlot || (match.position % 2 === 0 ? 'home' : 'away')
+            const slotKey = `${slot}ParticipantId` as 'homeParticipantId' | 'awayParticipantId'
+            nextMatch[slotKey] = ''
+            // Si el siguiente partido ya no tiene ambos participantes, limpiar su ganador
+            if (!nextMatch.homeParticipantId || !nextMatch.awayParticipantId) {
+              nextMatch.winnerParticipantId = undefined
+            }
+          }
+        }
+        
+        // Limpiar perdedor del partido de losers bracket
+        if (match.stage === 'winners' && match.loserNextMatchId) {
+          const loserMatch = all.find(m => m.id === match.loserNextMatchId)
+          if (loserMatch) {
+            const slot = match.loserNextMatchSlot || (match.position % 2 === 0 ? 'home' : 'away')
+            const slotKey = `${slot}ParticipantId` as 'homeParticipantId' | 'awayParticipantId'
+            loserMatch[slotKey] = ''
+            // Si el siguiente partido ya no tiene ambos participantes, limpiar su ganador
+            if (!loserMatch.homeParticipantId || !loserMatch.awayParticipantId) {
+              loserMatch.winnerParticipantId = undefined
+            }
+          }
+        }
+      }
+      
       await db.matches.bulkPut(all)
     }
 
