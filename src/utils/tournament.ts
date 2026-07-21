@@ -263,6 +263,14 @@ export function generateKnockoutMatches(
   for (let r = 0; r < matchesByRound.length - 1; r++) {
     const current = matchesByRound[r]
     const next = matchesByRound[r + 1]
+
+    if (current.length === 2) {
+      current[0].nextMatchId = next[0].id
+      current[0].nextMatchSlot = 'home'
+      current[1].nextMatchId = next[0].id
+      current[1].nextMatchSlot = 'away'
+      continue
+    }
     
     // Separar en pares e impares
     const evens = current.filter((_, i) => i % 2 === 0)  // 0, 2, 4, 6...
